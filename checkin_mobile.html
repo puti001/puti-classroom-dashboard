@@ -24,7 +24,7 @@
     }
   </style>
 </head>
-<body class="p-4 sm:p-6 flex flex-col justify-between items-center text-slate-800 select-none">
+<body class="p-3 sm:p-6 flex flex-col justify-between items-center text-slate-800 select-none">
 
   <!-- ================= 視圖 1: 報到表單 ================= -->
   <div id="viewCheckin" class="w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-indigo-100 p-6 sm:p-8 mt-2 mb-6">
@@ -84,16 +84,16 @@
 
       <button type="submit" id="submitBtn"
         class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 text-white font-bold text-base shadow-lg shadow-indigo-300 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2">
-        <span>完成報到並進入搶答大廳</span>
+        <span>完成報到並進入課堂互動</span>
         <i class="fa-solid fa-bolt text-amber-300"></i>
       </button>
     </form>
   </div>
 
-  <!-- ================= 視圖 2: 學員專屬搶答互動大廳 ================= -->
+  <!-- ================= 視圖 2: 學員專屬互動大廳 (搶答 + Kahoot) ================= -->
   <div id="viewBuzzer" class="hidden w-full max-w-lg flex flex-col items-center text-center">
     <!-- 學員身分牌卡 -->
-    <div class="w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-md border border-indigo-100 flex items-center justify-between mb-4">
+    <div class="w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-md border border-indigo-100 flex items-center justify-between mb-3">
       <div class="flex items-center gap-3 text-left">
         <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
           <i class="fa-solid fa-user"></i>
@@ -104,7 +104,7 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+        <span id="lobbyModeBadge" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> 連線中
         </span>
         <button onclick="editProfile()" class="text-xs text-slate-400 hover:text-indigo-600 p-1" title="修改資料">
@@ -113,28 +113,28 @@
       </div>
     </div>
 
-    <!-- 搶答主舞台 -->
-    <div class="w-full bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl border border-indigo-100 flex flex-col items-center justify-center min-h-[420px] transition-all duration-300">
+    <!-- 互動主舞台容器 -->
+    <div class="w-full bg-white/95 backdrop-blur-md rounded-3xl p-5 sm:p-8 shadow-2xl border border-indigo-100 flex flex-col items-center justify-center min-h-[420px] transition-all duration-300">
       
-      <!-- 狀態 A: 等待講師出題 -->
-      <div id="buzzerStateWaiting" class="space-y-4">
-        <div class="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center mx-auto text-slate-400 text-4xl">
+      <!-- 狀態 A: 待機中 (老師講課) -->
+      <div id="buzzerStateWaiting" class="space-y-4 py-8">
+        <div class="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center mx-auto text-slate-400 text-3xl">
           <i class="fa-solid fa-hourglass-half animate-spin"></i>
         </div>
-        <h2 class="text-xl font-black text-slate-700">等待講師開放搶答</h2>
+        <h2 class="text-xl font-black text-slate-700">課堂連線就緒</h2>
         <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-          講師按下「開放搶答」時，手機將發出震動並亮起按鈕。<br>請注視講台大螢幕題目，手速準備！
+          講師開放「<span class="text-rose-500 font-bold">搶答</span>」或「<span class="text-indigo-600 font-bold">Kahoot 問答</span>」時，手機將自動切換互動畫面。<br>請保持螢幕常亮，準備大顯身手！
         </p>
       </div>
 
-      <!-- 狀態 B: 開放搶答中 (巨大可按搶答鈕) -->
-      <div id="buzzerStateActive" class="hidden flex flex-col items-center justify-center space-y-5">
+      <!-- 狀態 B: 搶答模式 (巨大紅色開搶按鈕) -->
+      <div id="buzzerStateActive" class="hidden flex flex-col items-center justify-center space-y-4 py-4">
         <div class="text-xs font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-4 py-1.5 rounded-full border border-rose-200 animate-bounce">
           ⚡ 搶答開放中！火速按下！
         </div>
 
         <button id="btnBuzz" onclick="pressBuzzer()"
-          class="w-60 h-60 sm:w-68 sm:h-68 rounded-full bg-gradient-to-tr from-rose-600 via-rose-500 to-amber-500 text-white font-black text-6xl shadow-2xl buzzer-active active:scale-90 transition-transform flex flex-col items-center justify-center gap-2 cursor-pointer border-4 border-white">
+          class="w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-gradient-to-tr from-rose-600 via-rose-500 to-amber-500 text-white font-black text-6xl shadow-2xl buzzer-active active:scale-90 transition-transform flex flex-col items-center justify-center gap-2 cursor-pointer border-4 border-white">
           <i class="fa-solid fa-bolt text-5xl text-amber-200"></i>
           <span>搶！</span>
         </button>
@@ -142,9 +142,9 @@
         <p class="text-xs font-bold text-slate-400">點擊上方巨型按鈕立即送出時間戳！</p>
       </div>
 
-      <!-- 狀態 C: 已搶答 (揭曉名次) -->
-      <div id="buzzerStateRank" class="hidden flex flex-col items-center justify-center space-y-4">
-        <div id="rankIconBox" class="w-24 h-24 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-4xl mx-auto shadow-inner">
+      <!-- 狀態 C: 已搶答 (名次揭曉) -->
+      <div id="buzzerStateRank" class="hidden flex flex-col items-center justify-center space-y-3 py-6">
+        <div id="rankIconBox" class="w-20 h-20 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-4xl mx-auto shadow-inner">
           <i class="fa-solid fa-trophy"></i>
         </div>
         <div>
@@ -159,11 +159,40 @@
         </p>
       </div>
 
+      <!-- 狀態 D: Kahoot 模式 (四色大作答卡片) -->
+      <div id="kahootMobileBox" class="hidden w-full flex flex-col items-center space-y-3">
+        <div class="flex items-center justify-between w-full px-1 text-xs font-black">
+          <span class="text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200" id="kahootQIndexBadge">
+            題目 Q1
+          </span>
+          <span class="text-slate-400" id="kahootStatusHint">請注視前方大螢幕看題</span>
+        </div>
+
+        <!-- 四色大按鈕 -->
+        <div class="grid grid-cols-2 gap-3.5 w-full pt-1">
+          <button onclick="submitKahootChoice('A')" id="btnOptA" class="h-28 sm:h-32 rounded-3xl bg-gradient-to-tr from-rose-500 to-rose-600 text-white font-black text-3xl shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center border-4 border-transparent">
+            <span>▲ A</span>
+          </button>
+          <button onclick="submitKahootChoice('B')" id="btnOptB" class="h-28 sm:h-32 rounded-3xl bg-gradient-to-tr from-emerald-500 to-emerald-600 text-white font-black text-3xl shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center border-4 border-transparent">
+            <span>◆ B</span>
+          </button>
+          <button onclick="submitKahootChoice('C')" id="btnOptC" class="h-28 sm:h-32 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-500 text-white font-black text-3xl shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center border-4 border-transparent">
+            <span>● C</span>
+          </button>
+          <button onclick="submitKahootChoice('D')" id="btnOptD" class="h-28 sm:h-32 rounded-3xl bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white font-black text-3xl shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center border-4 border-transparent">
+            <span>■ D</span>
+          </button>
+        </div>
+
+        <div id="kahootChoiceFeedback" class="text-xs font-bold text-indigo-700 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 w-full text-center">
+          點擊上方色塊作答（大螢幕開票前可隨時重選）
+        </div>
+      </div>
+
     </div>
 
-    <!-- 提示 -->
     <div class="mt-4 text-[11px] text-slate-400 text-center">
-      💡 提示：手機請保持開啟螢幕，勿切換分頁以確保網路最即時。
+      💡 提示：手機請保持開啟螢幕，勿切換分頁以確保連線即時。
     </div>
   </div>
 
@@ -173,10 +202,11 @@
   </footer>
 
   <script>
-    // 學員本地資料持久化
     let currentUser = null;
-    let currentRoundId = 0;
+    let currentBuzzerRoundId = 0;
     let hasBuzzedThisRound = false;
+    let currentKahootChoice = null;
+    let lastKahootQIndex = -1;
     let pollInterval = null;
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -184,12 +214,11 @@
       if (saved) {
         try {
           currentUser = JSON.parse(saved);
-          showBuzzerView();
+          showLobbyView();
         } catch(e) {}
       }
     });
 
-    // 處理報到提交
     const form = document.getElementById('checkinForm');
     const submitBtn = document.getElementById('submitBtn');
 
@@ -211,11 +240,10 @@
       currentUser = { school: payload.school, name: payload.name };
       localStorage.setItem('puti_workshop_user', JSON.stringify(currentUser));
 
-      // 若在 Apps Script 環境
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(function() { showBuzzerView(); })
-          .withFailureHandler(function() { showBuzzerView(); })
+          .withSuccessHandler(function() { showLobbyView(); })
+          .withFailureHandler(function() { showLobbyView(); })
           .saveCheckin(payload);
       } else {
         fetch(window.location.href, {
@@ -223,19 +251,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
-        .then(() => showBuzzerView())
-        .catch(() => showBuzzerView());
+        .then(() => showLobbyView())
+        .catch(() => showLobbyView());
       }
     });
 
-    function showBuzzerView() {
+    function showLobbyView() {
       document.getElementById('viewCheckin').classList.add('hidden');
       document.getElementById('viewBuzzer').classList.remove('hidden');
       document.getElementById('badgeSchool').innerText = currentUser.school;
       document.getElementById('badgeName').innerText = currentUser.name + ' 老師';
 
-      // 啟動輪詢
-      startPollingBuzzer();
+      startPollingLobby();
     }
 
     function editProfile() {
@@ -246,81 +273,115 @@
         document.getElementById('viewBuzzer').classList.add('hidden');
         document.getElementById('viewCheckin').classList.remove('hidden');
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span>更新資料並返回搶答大廳</span> <i class="fa-solid fa-arrow-right"></i>';
+        submitBtn.innerHTML = '<span>更新資料並返回大廳</span> <i class="fa-solid fa-arrow-right"></i>';
       }
     }
 
-    // ---------------- 搶答輪詢與狀態切換 ----------------
-    function startPollingBuzzer() {
-      checkBuzzerState();
-      pollInterval = setInterval(checkBuzzerState, 1200);
+    // ---------------- 輪詢大廳狀態 (搶答 + Kahoot) ----------------
+    function startPollingLobby() {
+      checkLobbyState();
+      pollInterval = setInterval(checkLobbyState, 1200);
     }
 
-    function checkBuzzerState() {
-      const url = window.location.href.split('?')[0] + '?action=getBuzzerStatus&t=' + Date.now();
-      
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(handleBuzzerStateResponse)
-          .getBuzzerState();
-      } else {
-        fetch(url)
-          .then(res => res.json())
-          .then(handleBuzzerStateResponse)
-          .catch(() => {});
-      }
+    function checkLobbyState() {
+      const baseUrl = window.location.href.split('?')[0];
+
+      // 同時檢查 Kahoot 與 Buzzer
+      Promise.all([
+        fetch(baseUrl + '?action=getBuzzerStatus&t=' + Date.now()).then(r => r.json()).catch(() => null),
+        fetch(baseUrl + '?action=getKahootStatus&t=' + Date.now()).then(r => r.json()).catch(() => null)
+      ]).then(([buzzerData, kahootData]) => {
+        handleLobbySync(buzzerData, kahootData);
+      });
     }
 
-    function handleBuzzerStateResponse(data) {
-      if (!data) return;
-
-      // 如果是新的搶答回合，重置本地按鈕狀態
-      if (data.roundId !== currentRoundId) {
-        currentRoundId = data.roundId;
-        hasBuzzedThisRound = false;
-      }
-
+    function handleLobbySync(buzzer, kahoot) {
       const boxWaiting = document.getElementById('buzzerStateWaiting');
-      const boxActive = document.getElementById('buzzerStateActive');
-      const boxRank = document.getElementById('buzzerStateRank');
+      const boxBuzzerActive = document.getElementById('buzzerStateActive');
+      const boxBuzzerRank = document.getElementById('buzzerStateRank');
+      const boxKahoot = document.getElementById('kahootMobileBox');
+      const modeBadge = document.getElementById('lobbyModeBadge');
 
-      if (!data.active) {
-        // 講師尚未開放
-        boxWaiting.classList.remove('hidden');
-        boxActive.classList.add('hidden');
-        boxRank.classList.add('hidden');
-      } else {
-        // 講師已開放搶答！
-        if (hasBuzzedThisRound) {
-          // 本學員已經按過了
-          boxWaiting.classList.add('hidden');
-          boxActive.classList.add('hidden');
-          boxRank.classList.remove('hidden');
+      // 優先權 1: 如果大螢幕正處於 Kahoot 答題中 (open 或 closed)
+      if (kahoot && (kahoot.status === 'open' || kahoot.status === 'closed')) {
+        boxWaiting.classList.add('hidden');
+        boxBuzzerActive.classList.add('hidden');
+        boxBuzzerRank.classList.add('hidden');
+        boxKahoot.classList.remove('hidden');
+
+        modeBadge.innerText = '🎮 Kahoot 作答';
+        modeBadge.className = 'inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200';
+
+        // 若換題了，重置選擇
+        if (kahoot.qIndex !== lastKahootQIndex) {
+          lastKahootQIndex = kahoot.qIndex;
+          currentKahootChoice = null;
+          resetKahootBtnStyles();
+        }
+
+        document.getElementById('kahootQIndexBadge').innerText = `題目 Q${kahoot.qIndex + 1}`;
+        const feedback = document.getElementById('kahootChoiceFeedback');
+        const hint = document.getElementById('kahootStatusHint');
+
+        if (kahoot.status === 'closed') {
+          hint.innerText = '已截止作答！';
+          if (currentKahootChoice) {
+            feedback.innerHTML = `您選擇了 <span class="font-black text-indigo-600 text-sm">${currentKahootChoice}</span>！請看大螢幕揭曉正解！`;
+          } else {
+            feedback.innerText = '本題作答時間已截止。';
+          }
         } else {
-          // 尚未按下！展示超大搶答按鈕
-          boxWaiting.classList.add('hidden');
-          boxActive.classList.remove('hidden');
-          boxRank.classList.add('hidden');
-
-          // 手機震動提示 (如果支援)
-          if (navigator.vibrate) {
-            navigator.vibrate([100, 50, 100]);
+          hint.innerText = '開放作答中';
+          if (currentKahootChoice) {
+            feedback.innerHTML = `已記錄選擇：<span class="font-black text-indigo-600 text-sm">${currentKahootChoice}</span>（點其他選項可隨時修改）`;
+          } else {
+            feedback.innerText = '請點選上方色塊作答！';
           }
         }
+        return;
       }
+
+      // 優先權 2: 如果大螢幕開放搶答中
+      if (buzzer && buzzer.active) {
+        boxWaiting.classList.add('hidden');
+        boxKahoot.classList.add('hidden');
+        modeBadge.innerText = '⚡ 搶答中';
+        modeBadge.className = 'inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200';
+
+        if (buzzer.roundId !== currentBuzzerRoundId) {
+          currentBuzzerRoundId = buzzer.roundId;
+          hasBuzzedThisRound = false;
+          const btn = document.getElementById('btnBuzz');
+          btn.innerHTML = '<i class="fa-solid fa-bolt text-5xl text-amber-200"></i><span>搶！</span>';
+        }
+
+        if (hasBuzzedThisRound) {
+          boxBuzzerActive.classList.add('hidden');
+          boxBuzzerRank.classList.remove('hidden');
+        } else {
+          boxBuzzerActive.classList.remove('hidden');
+          boxBuzzerRank.classList.add('hidden');
+          if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        }
+        return;
+      }
+
+      // 優先權 3: 待機中
+      boxWaiting.classList.remove('hidden');
+      boxBuzzerActive.classList.add('hidden');
+      boxBuzzerRank.classList.add('hidden');
+      boxKahoot.classList.add('hidden');
+      modeBadge.innerText = '待命中';
+      modeBadge.className = 'inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200';
     }
 
-    // 學員按下搶答按鈕
+    // ---------------- 搶答送出 ----------------
     function pressBuzzer() {
       if (hasBuzzedThisRound || !currentUser) return;
       hasBuzzedThisRound = true;
 
-      // 按下震動回饋
-      if (navigator.vibrate) {
-        navigator.vibrate(200);
-      }
+      if (navigator.vibrate) navigator.vibrate(200);
 
-      // 立即切換為等待揭曉
       const btn = document.getElementById('btnBuzz');
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-4xl"></i><span class="text-2xl mt-2">搶答中...</span>';
 
@@ -328,25 +389,17 @@
         action: 'buzz',
         name: currentUser.name,
         school: currentUser.school,
-        roundId: currentRoundId
+        roundId: currentBuzzerRoundId
       };
 
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(onBuzzSuccess)
-          .handleBuzz(payload.name, payload.school, payload.roundId);
-      } else {
-        const url = window.location.href.split('?')[0] + 
-          '?action=buzz&name=' + encodeURIComponent(payload.name) + 
-          '&school=' + encodeURIComponent(payload.school) + 
-          '&roundId=' + payload.roundId;
-        fetch(url)
-          .then(res => res.json())
-          .then(onBuzzSuccess)
-          .catch(() => {
-            onBuzzSuccess({ status: 'success', rank: 1, timeDiff: 0.45 });
-          });
-      }
+      const url = window.location.href.split('?')[0] + 
+        '?action=buzz&name=' + encodeURIComponent(payload.name) + 
+        '&school=' + encodeURIComponent(payload.school) + 
+        '&roundId=' + payload.roundId;
+      fetch(url)
+        .then(res => res.json())
+        .then(onBuzzSuccess)
+        .catch(() => onBuzzSuccess({ status: 'success', rank: 1, timeDiff: 0.45 }));
     }
 
     function onBuzzSuccess(res) {
@@ -361,28 +414,65 @@
       if (rank === 1) {
         rankText.innerText = '🥇 第 1 名搶到！';
         rankText.className = 'text-4xl sm:text-5xl font-black text-amber-500 mt-1';
-        rankIconBox.className = 'w-24 h-24 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-4xl mx-auto shadow-inner';
+        rankIconBox.className = 'w-20 h-20 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mx-auto shadow-inner';
         rankIconBox.innerHTML = '<i class="fa-solid fa-crown text-amber-500"></i>';
       } else if (rank === 2) {
         rankText.innerText = '🥈 第 2 名搶到！';
         rankText.className = 'text-4xl sm:text-5xl font-black text-slate-600 mt-1';
-        rankIconBox.className = 'w-24 h-24 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-4xl mx-auto shadow-inner';
+        rankIconBox.className = 'w-20 h-20 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-3xl mx-auto shadow-inner';
         rankIconBox.innerHTML = '<i class="fa-solid fa-medal text-slate-500"></i>';
       } else if (rank === 3) {
         rankText.innerText = '🥉 第 3 名搶到！';
         rankText.className = 'text-4xl sm:text-5xl font-black text-amber-700 mt-1';
-        rankIconBox.className = 'w-24 h-24 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-4xl mx-auto shadow-inner';
+        rankIconBox.className = 'w-20 h-20 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-3xl mx-auto shadow-inner';
         rankIconBox.innerHTML = '<i class="fa-solid fa-award text-amber-600"></i>';
       } else {
         rankText.innerText = `第 ${rank} 名排隊中`;
         rankText.className = 'text-3xl sm:text-4xl font-black text-indigo-950 mt-1';
-        rankIconBox.className = 'w-24 h-24 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-3xl mx-auto shadow-inner';
+        rankIconBox.className = 'w-20 h-20 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mx-auto shadow-inner';
         rankIconBox.innerHTML = '<i class="fa-solid fa-users"></i>';
       }
 
       if (res.timeDiff) {
         rankTimeText.innerText = `反應時間：${res.timeDiff} 秒`;
       }
+    }
+
+    // ---------------- Kahoot 作答送出 ----------------
+    function submitKahootChoice(option) {
+      if (!currentUser) return;
+      currentKahootChoice = option;
+
+      if (navigator.vibrate) navigator.vibrate(100);
+
+      // 高亮已選按鈕
+      resetKahootBtnStyles();
+      const targetBtn = document.getElementById(`btnOpt${option}`);
+      if (targetBtn) {
+        targetBtn.classList.remove('border-transparent');
+        targetBtn.classList.add('border-white', 'ring-4', 'ring-indigo-400', 'scale-95');
+      }
+
+      const feedback = document.getElementById('kahootChoiceFeedback');
+      feedback.innerHTML = `已送出選擇：<span class="font-black text-indigo-600 text-sm">${option}</span>！大螢幕開票前可改選。`;
+
+      const baseUrl = window.location.href.split('?')[0];
+      const url = baseUrl + '?action=submitKahootAnswer&name=' + encodeURIComponent(currentUser.name) +
+        '&school=' + encodeURIComponent(currentUser.school) +
+        '&qIndex=' + lastKahootQIndex +
+        '&option=' + option;
+
+      fetch(url).catch(() => {});
+    }
+
+    function resetKahootBtnStyles() {
+      ['A', 'B', 'C', 'D'].forEach(opt => {
+        const btn = document.getElementById(`btnOpt${opt}`);
+        if (btn) {
+          btn.classList.add('border-transparent');
+          btn.classList.remove('border-white', 'ring-4', 'ring-indigo-400', 'scale-95');
+        }
+      });
     }
   </script>
 </body>

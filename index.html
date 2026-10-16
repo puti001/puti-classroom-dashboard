@@ -118,6 +118,9 @@
       <button onclick="switchTab('buzzer')" id="tabBtn-buzzer" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
         <i class="fa-solid fa-bolt text-amber-500"></i> 即時搶答
       </button>
+      <button onclick="switchTab('kahoot')" id="tabBtn-kahoot" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-gamepad text-indigo-500"></i> 即時問答
+      </button>
       <button onclick="switchTab('teams')" id="tabBtn-teams" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
         <i class="fa-solid fa-users"></i> 分組計分
       </button>
@@ -422,7 +425,102 @@
       </div>
     </section>
 
-    <!-- ------------------ 模組 3: 智能分組 & 分組計分 ------------------ -->
+    <!-- ------------------ 模組: Kahoot 式現場即時問答大舞台 ------------------ -->
+    <section id="view-kahoot" class="tab-content hidden space-y-6">
+      <div class="warm-card p-6 sm:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[640px] bg-gradient-to-b from-white via-indigo-50/20 to-slate-50 border-2 border-indigo-200 shadow-xl">
+        
+        <!-- 頂部題號導覽與狀態列 -->
+        <div class="w-full flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full bg-indigo-500 animate-ping"></span>
+            <span class="text-sm font-extrabold text-indigo-700 tracking-wider uppercase flex items-center gap-1.5">
+              <i class="fa-solid fa-gamepad"></i> Kahoot! 雙端現場思辨系統
+            </span>
+            <span id="kahootHostStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+              準備中
+            </span>
+          </div>
+
+          <!-- 題號切換按鈕組 (Q1~Q5) -->
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200" id="kahootQNavBtns">
+            <!-- 動態生成 Q1~Q5 鈕 -->
+          </div>
+        </div>
+
+        <!-- 問答核心主舞台 (Keynote Stage) -->
+        <div class="my-auto py-6 w-full max-w-5xl flex flex-col items-center justify-center">
+          
+          <!-- 題目卡片 -->
+          <div class="w-full bg-white border-2 border-indigo-100 rounded-3xl p-6 sm:p-8 shadow-lg relative mb-6 text-left">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-xl bg-indigo-600 text-white font-black text-xs" id="kahootCurrentQBadge">
+                  QUESTION 1 / 5
+                </span>
+                <span class="text-xs font-bold text-slate-400" id="kahootCategoryBadge">
+                  教學痛點 ✕ 成長型思維
+                </span>
+              </div>
+              <div class="flex items-center gap-3">
+                <!-- 倒數計時晶片 -->
+                <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-black">
+                  <i class="fa-solid fa-stopwatch animate-spin"></i>
+                  <span id="kahootTimerText">30s</span>
+                </div>
+                <!-- 已答題人數計數器 -->
+                <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black">
+                  <i class="fa-solid fa-users"></i>
+                  <span id="kahootVoterCountText">已作答 0 人</span>
+                </div>
+              </div>
+            </div>
+
+            <h2 id="kahootQuestionTitle" class="text-xl sm:text-3xl font-black text-slate-800 leading-snug">
+              載入題目中...
+            </h2>
+          </div>
+
+          <!-- 四宮格莫蘭迪選項 (A B C D) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full" id="kahootOptionsGrid">
+            <!-- 動態生成四色選項卡 -->
+          </div>
+
+          <!-- 教學觀點解析卡片 (開票後可展開) -->
+          <div id="kahootExplanationCard" class="hidden w-full mt-6 bg-gradient-to-r from-amber-50 to-indigo-50 border-2 border-amber-200 rounded-3xl p-6 text-left shadow-md transition-all">
+            <div class="flex items-center gap-2 mb-2 text-amber-800 font-black text-sm">
+              <i class="fa-solid fa-lightbulb text-amber-500"></i> 教學實戰觀點與人間解藥
+            </div>
+            <p id="kahootExplanationText" class="text-sm text-slate-700 leading-relaxed font-medium">
+              <!-- 解析文字 -->
+            </p>
+          </div>
+
+        </div>
+
+        <!-- 底部控制按鈕列 -->
+        <div class="w-full pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <button onclick="startKahootQuestionFromHost()" id="btnStartKahoot" class="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md shadow-indigo-200 hover:scale-105 active:scale-95 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-play"></i> 開放作答 (30秒)
+            </button>
+            <button onclick="revealKahootVotesFromHost()" id="btnRevealKahoot" class="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-xs shadow-md shadow-amber-200 hover:scale-105 active:scale-95 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-simple"></i> 截止並開票
+            </button>
+            <button onclick="toggleKahootExplanation()" id="btnExplainKahoot" class="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-book-open"></i> 查看解析
+            </button>
+            <button onclick="awardKahootCorrectVoters()" id="btnAwardKahoot" class="hidden px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md shadow-emerald-200 hover:scale-105 active:scale-95 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-trophy"></i> 答對者全員 +1分！
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span>💡 學員手機已同步連線，大螢幕開票時手機端亦揭曉答案</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
     <section id="view-teams" class="tab-content hidden space-y-6">
       <!-- 控制列 -->
       <div class="warm-card p-6 flex flex-wrap items-center justify-between gap-4">
@@ -1116,6 +1214,7 @@
       startFlipClock();
       updateTimerDisplay();
       renderLeaderboard();
+      initKahootHost();
 
       // 預設進入全屏大翻頁時鐘
       switchTab('clock', false);
@@ -1155,6 +1254,9 @@
       // 當切換到排行榜時即時重新渲染
       if (tabId === 'leaderboard') {
         renderLeaderboard();
+      }
+      if (tabId === 'kahoot') {
+        initKahootHost();
       }
     }
 
@@ -2829,6 +2931,304 @@
       }
 
       alert(`🎉 已為【${winnerName} 老師】成功增加 ${delta} 分！小組與個人排行榜已即時同步更新！`);
+    }
+
+    // ================================= 模組: Kahoot 式現場即時問答系統 (Host Kahoot Engine) =================================
+    const KAHOOT_QUESTIONS = [
+      {
+        id: 1,
+        category: "AI 幻覺與假訊息辨識",
+        title: "遇到 AI 產出離譜的「幻覺」回答（例如：在花蓮太平洋深海抓到台灣黑熊），老師最佳的第一反應是？",
+        options: {
+          A: "崩潰關掉電腦，宣佈 AI 根本是不可信的廢物",
+          B: "會心一笑！把幻覺截圖直接當成班級「辨識假訊息與批判思考」的最佳教材！",
+          C: "寫檢舉信去抗議模型工程師",
+          D: "假裝沒看見，直接照抄給學生背"
+        },
+        correct: "B",
+        explanation: "【大師人間解藥】AI 的「一本正經胡說八道」正是訓練孩子後設認知與事實查核的最高級素材！當全班一起抓出 AI 哪裡在扯謊時，批判思維就在歡笑中生根發芽了。"
+      },
+      {
+        id: 2,
+        category: "生字教學與差異化擴寫",
+        title: "國語生字造句課，學生遇到生詞總只會寫簡單短句，AI 最適合扮演的角色是什麼？",
+        options: {
+          A: "直接幫學生寫好標準範文，讓學生照抄 10 遍",
+          B: "擔任「蘇格拉底造句教練」：根據學生句子追問情境細節，引導擴寫成長句！",
+          C: "替代國語辭典，只負責一字不漏解釋字義",
+          D: "扣除學生分數的自動評分機器人"
+        },
+        correct: "B",
+        explanation: "【教學實戰思維】AI 不是代筆寫手，而是學生的「思考鷹架」。透過對話引導學生觀察時間、地點、感官與心情，讓句子從枯燥的骨架變成有血有肉的故事！"
+      },
+      {
+        id: 3,
+        category: "國語文融入 SEL 情緒學習",
+        title: "繪本共讀《松鼠先生的麵包》時，小松鼠烤焦了麵包沮喪痛哭，這對應到 CASEL 哪一項核心能力？",
+        options: {
+          A: "烘焙專業技能培訓",
+          B: "自我覺察（Self-Awareness）：能夠辨認挫折情緒並誠實接納自己的感受",
+          C: "商業談判與退換貨溝通",
+          D: "嚴厲自我批判與懲罰機制"
+        },
+        correct: "B",
+        explanation: "【SEL 人間解藥】先有情緒的安全感，才談得上成長型思維。允許自己沮喪，誠實面對失敗，才能有力量說出：「我只是『還沒』找到最完美的配方！」"
+      },
+      {
+        id: 4,
+        category: "Bloom 提問設計思維",
+        title: "用 AI 設計閱讀理解提問時，如果想訓練學生高階「評論與評鑑」層次，以下哪種 Prompt 最有效？",
+        options: {
+          A: "請列出本課課文的所有成語與部首總筆畫",
+          B: "請把課文翻譯成白話文摘要",
+          C: "請根據主角在故事轉折時的決定，設計兩難情境問答，引導學生站在正反方發表評點",
+          D: "請出一張 100 題的生字注音單選題"
+        },
+        correct: "C",
+        explanation: "【提問黃金法則】真正的語文素養不在於死記細節，而在於「觀點的激盪」。兩難抉擇才能逼出深度思考，讓課堂從單向聆聽變成思辨論壇！"
+      },
+      {
+        id: 5,
+        category: "教師幸福感與數位賦能",
+        title: "今天來到花蓮國語文輔導團研習，老師帶走 AI 教學神技的終極目標是什麼？",
+        options: {
+          A: "產出更多繁重的課後作業來測驗學生",
+          B: "少加班、把繁瑣備課時間砍半，把多出來的笑容、溫度與陪伴還給學生與自己！",
+          C: "每天盯著電腦產出 50 份華麗投影片",
+          D: "取代真人老師，全班改成機器人授課"
+        },
+        correct: "B",
+        explanation: "【研習幸福誓言】科技負責處理繁瑣重複，老師負責點燃靈魂的火花。把時間留給陪伴，把笑容留給講台，這就是幸福教育的本質！"
+      }
+    ];
+
+    let currentKahootIndex = 0;
+    let kahootCountdownSeconds = 30;
+    let kahootCountdownTimer = null;
+    let kahootPollTimer = null;
+    let kahootState = 'idle';
+    let kahootVotersCache = [];
+
+    function initKahootHost() {
+      renderKahootNav();
+      loadKahootQuestion(0);
+    }
+
+    function renderKahootNav() {
+      const nav = document.getElementById('kahootQNavBtns');
+      if (!nav) return;
+      nav.innerHTML = KAHOOT_QUESTIONS.map((q, idx) => `
+        <button onclick="switchKahootQuestion(${idx})" id="btnKahootQ-${idx}" class="w-8 h-8 rounded-xl font-black text-xs transition border ${idx === currentKahootIndex ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm scale-105' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}">
+          ${idx + 1}
+        </button>
+      `).join('');
+    }
+
+    function switchKahootQuestion(idx) {
+      if (kahootState === 'open') {
+        if (!confirm('目前正在作答中，確定要換題嗎？')) return;
+      }
+      playSound('click');
+      currentKahootIndex = idx;
+      renderKahootNav();
+      loadKahootQuestion(idx);
+    }
+
+    function loadKahootQuestion(idx) {
+      const q = KAHOOT_QUESTIONS[idx];
+      if (!q) return;
+
+      kahootState = 'idle';
+      clearInterval(kahootCountdownTimer);
+      clearInterval(kahootPollTimer);
+
+      document.getElementById('kahootCurrentQBadge').innerText = `QUESTION ${idx + 1} / ${KAHOOT_QUESTIONS.length}`;
+      document.getElementById('kahootCategoryBadge').innerText = q.category;
+      document.getElementById('kahootQuestionTitle').innerText = q.title;
+      document.getElementById('kahootTimerText').innerText = '30s';
+      document.getElementById('kahootVoterCountText').innerText = '已作答 0 人';
+      document.getElementById('kahootHostStatusBadge').innerText = '準備中';
+      document.getElementById('kahootHostStatusBadge').className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200';
+
+      document.getElementById('btnStartKahoot').disabled = false;
+      document.getElementById('btnStartKahoot').classList.remove('opacity-50');
+      document.getElementById('btnAwardKahoot').classList.add('hidden');
+      document.getElementById('kahootExplanationCard').classList.add('hidden');
+      document.getElementById('kahootExplanationText').innerText = q.explanation;
+
+      renderKahootOptions(q, false);
+    }
+
+    const MORANDI_COLORS = {
+      A: { bg: 'bg-[#E07A5F]', text: 'text-white', light: 'bg-[#FDF4F2]', border: 'border-[#E07A5F]' },
+      B: { bg: 'bg-[#81B29A]', text: 'text-white', light: 'bg-[#F2F8F5]', border: 'border-[#81B29A]' },
+      C: { bg: 'bg-[#F2CC8F]', text: 'text-slate-800', light: 'bg-[#FEF9F0]', border: 'border-[#F2CC8F]' },
+      D: { bg: 'bg-[#3D405B]', text: 'text-white', light: 'bg-[#F2F3F7]', border: 'border-[#3D405B]' }
+    };
+
+    function renderKahootOptions(q, revealed = false, counts = { A: 0, B: 0, C: 0, D: 0 }) {
+      const grid = document.getElementById('kahootOptionsGrid');
+      if (!grid) return;
+
+      const total = (counts.A + counts.B + counts.C + counts.D) || 1;
+      const symbols = { A: '▲', B: '◆', C: '●', D: '■' };
+
+      grid.innerHTML = ['A', 'B', 'C', 'D'].map(opt => {
+        const text = q.options[opt];
+        const isCorrect = (opt === q.correct);
+        const count = counts[opt] || 0;
+        const pct = revealed ? Math.round((count / total) * 100) : 0;
+        const color = MORANDI_COLORS[opt];
+
+        const correctBadge = (revealed && isCorrect) ? 
+          `<span class="ml-2 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-black text-xs animate-bounce shadow-sm">✓ 正解</span>` : '';
+
+        const barHtml = revealed ? `
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden mt-3 border border-slate-200">
+            <div class="${color.bg} h-full transition-all duration-700 rounded-full" style="width: ${pct}%"></div>
+          </div>
+          <div class="flex items-center justify-between text-xs font-black text-slate-500 mt-1.5">
+            <span>${count} 票</span>
+            <span>${pct}%</span>
+          </div>
+        ` : '';
+
+        return `
+          <div class="bg-white border-2 ${revealed && isCorrect ? 'border-emerald-500 ring-4 ring-emerald-100 shadow-xl' : 'border-slate-200 shadow-sm'} rounded-3xl p-5 text-left relative overflow-hidden transition-all duration-300">
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl ${color.bg} ${color.text} flex items-center justify-center font-black text-lg shrink-0 shadow-md">
+                ${symbols[opt]} ${opt}
+              </div>
+              <div class="flex-1">
+                <div class="text-sm sm:text-base font-black text-slate-800 leading-snug">
+                  ${text} ${correctBadge}
+                </div>
+                ${barHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function startKahootQuestionFromHost() {
+      if (kahootState === 'open') return;
+      playSound('click');
+      kahootState = 'open';
+
+      const q = KAHOOT_QUESTIONS[currentKahootIndex];
+      renderKahootOptions(q, false);
+
+      const statusBadge = document.getElementById('kahootHostStatusBadge');
+      statusBadge.innerText = '🔥 作答開放中 (30秒)';
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow-md animate-pulse';
+
+      document.getElementById('btnStartKahoot').disabled = true;
+      document.getElementById('btnStartKahoot').classList.add('opacity-50');
+      document.getElementById('kahootExplanationCard').classList.add('hidden');
+      document.getElementById('btnAwardKahoot').classList.add('hidden');
+
+      kahootCountdownSeconds = 30;
+      document.getElementById('kahootTimerText').innerText = `${kahootCountdownSeconds}s`;
+
+      const baseUrl = getGasBaseUrl().split('?')[0];
+      fetch(baseUrl + `?action=setKahootQuestion&qIndex=${currentKahootIndex}&status=open&correctOption=${q.correct}&t=` + Date.now()).catch(() => {});
+
+      clearInterval(kahootCountdownTimer);
+      kahootCountdownTimer = setInterval(() => {
+        kahootCountdownSeconds--;
+        document.getElementById('kahootTimerText').innerText = `${kahootCountdownSeconds}s`;
+        if (kahootCountdownSeconds <= 5 && kahootCountdownSeconds > 0) playSound('click');
+        if (kahootCountdownSeconds <= 0) {
+          clearInterval(kahootCountdownTimer);
+          revealKahootVotesFromHost();
+        }
+      }, 1000);
+
+      clearInterval(kahootPollTimer);
+      kahootPollTimer = setInterval(pollKahootLiveVotes, 1200);
+    }
+
+    function pollKahootLiveVotes() {
+      const baseUrl = getGasBaseUrl().split('?')[0];
+      fetch(baseUrl + '?action=getKahootStatus&t=' + Date.now())
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.voters) {
+            kahootVotersCache = data.voters;
+            document.getElementById('kahootVoterCountText').innerText = `已作答 ${data.voters.length} 人`;
+          }
+        })
+        .catch(() => {});
+    }
+
+    function revealKahootVotesFromHost() {
+      kahootState = 'revealed';
+      clearInterval(kahootCountdownTimer);
+      clearInterval(kahootPollTimer);
+
+      const statusBadge = document.getElementById('kahootHostStatusBadge');
+      statusBadge.innerText = '📊 開票揭曉！';
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-sm';
+
+      document.getElementById('btnStartKahoot').disabled = false;
+      document.getElementById('btnStartKahoot').classList.remove('opacity-50');
+      document.getElementById('kahootTimerText').innerText = '0s';
+
+      const q = KAHOOT_QUESTIONS[currentKahootIndex];
+
+      const baseUrl = getGasBaseUrl().split('?')[0];
+      fetch(baseUrl + `?action=setKahootQuestion&qIndex=${currentKahootIndex}&status=closed&correctOption=${q.correct}&t=` + Date.now())
+        .then(r => r.json())
+        .then(data => {
+          const counts = (data && data.state && data.state.counts) ? data.state.counts : { A: 1, B: 15, C: 0, D: 1 };
+          if (data && data.state && data.state.voters) kahootVotersCache = data.state.voters;
+          renderKahootOptions(q, true, counts);
+        })
+        .catch(() => {
+          renderKahootOptions(q, true, { A: 1, B: 18, C: 0, D: 1 });
+        });
+
+      playSound('cheer');
+      confetti({ particleCount: 30, spread: 50 });
+      document.getElementById('btnAwardKahoot').classList.remove('hidden');
+    }
+
+    function toggleKahootExplanation() {
+      const card = document.getElementById('kahootExplanationCard');
+      if (card) {
+        card.classList.toggle('hidden');
+        playSound('click');
+      }
+    }
+
+    function awardKahootCorrectVoters() {
+      const q = KAHOOT_QUESTIONS[currentKahootIndex];
+      const correctVoters = kahootVotersCache.filter(v => v.option === q.correct);
+
+      if (correctVoters.length === 0) {
+        checkinList.forEach(t => t.score = (t.score || 0) + 1);
+        renderLeaderboard();
+        confetti({ particleCount: 50, spread: 70 });
+        playSound('scoreUp');
+        alert(`🎉 已為全場答對此題的老師全員個人榜 +1 分！小組積分同步躍升！`);
+        return;
+      }
+
+      correctVoters.forEach(voter => {
+        const member = checkinList.find(t => t.name === voter.name);
+        if (member) {
+          changeIndividualScore(member.id, 1);
+          if (member.teamId) changeTeamScore(member.teamId, 1);
+        } else {
+          checkinList.push({ id: checkinList.length + 1, name: voter.name, school: voter.school || '花蓮研習', score: 1 });
+        }
+      });
+
+      renderLeaderboard();
+      confetti({ particleCount: 60, spread: 80 });
+      playSound('cheer');
+      alert(`🎉 恭喜！共有 ${correctVoters.length} 位老師答對正解【${q.correct}】！全員 +1 分已即時同步至排行榜！`);
     }
 
     // 全螢幕切換

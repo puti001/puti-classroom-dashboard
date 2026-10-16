@@ -5,6 +5,7 @@
 
 const SHEET_NAME_CHECKIN = '研習簽到表';
 const CACHE_KEY_BUZZER = 'puti_buzzer_state';
+const CACHE_KEY_KAHOOT = 'puti_kahoot_state';
 
 function doGet(e) {
   const p = (e && e.parameter) ? e.parameter : {};
@@ -15,7 +16,7 @@ function doGet(e) {
     return jsonOutput(getCheckinList());
   }
 
-  // 2. 搶答相關 API (GET 模式速度極快、免 preflight)
+  // 2. 搶答相關 API
   if (action === 'getBuzzerStatus') {
     return jsonOutput(getBuzzerState());
   }
@@ -28,8 +29,22 @@ function doGet(e) {
   if (action === 'buzz') {
     return jsonOutput(handleBuzz(p.name, p.school, p.roundId));
   }
+
+  // 3. Kahoot 即時問答相關 API
+  if (action === 'getKahootStatus') {
+    return jsonOutput(getKahootState());
+  }
+  if (action === 'setKahootQuestion') {
+    return jsonOutput(setKahootQuestionState(p.qIndex, p.status, p.correctOption));
+  }
+  if (action === 'submitKahootAnswer') {
+    return jsonOutput(handleKahootAnswer(p.name, p.school, p.qIndex, p.option));
+  }
+  if (action === 'resetKahoot') {
+    return jsonOutput(resetKahootState());
+  }
   
-  // 預設渲染手機端頁面（報到 + 搶答一體化介面）
+  // 預設渲染手機端頁面（報到 + 搶答 + Kahoot 一體化介面）
   return HtmlService.createTemplateFromFile('checkin_mobile')
     .evaluate()
     .setTitle('Puti-AI | 研習課堂互動端')
@@ -56,6 +71,12 @@ function doPost(e) {
     if (action === 'resetBuzzer') {
       return jsonOutput(resetBuzzerState());
     }
+    if (action === 'submitKahootAnswer') {
+      return jsonOutput(handleKahootAnswer(data.name, data.school, data.qIndex, data.option));
+    }
+    if (action === 'setKahootQuestion') {
+      return jsonOutput(setKahootQuestionState(data.qIndex, data.status, data.correctOption));
+    }
 
     // 預設為儲存簽到
     const result = saveCheckin(data);
@@ -68,6 +89,95 @@ function doPost(e) {
 function jsonOutput(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ======================== Kahoot 即時互動問答引擎 (CacheService Kahoot Engine) ========================
+
+function getKahootState() {
+  const cache = CacheService.getScriptCache();
+  const raw = cache.get(CACHE_KEY_KAHOOT);
+  if (!raw) {
+    return {
+      active: false,
+      qIndex: 0,
+      status: 'idle', // 'open', 'closed', 'idle'
+      counts: { A: 0, B: 0, C: 0, D: 0 },
+      voters: [],
+      correctOption: ''
+    };
+  }
+  try {
+    return JSON.parse(raw);
+  } catch(e) {
+    return { active: false, qIndex: 0, status: 'idle', counts: { A: 0, B: 0, C: 0, D: 0 }, voters: [], correctOption: '' };
+  }
+}
+
+function setKahootQuestionState(qIndex, status, correctOption) {
+  const cache = CacheService.getScriptCache();
+  let state = getKahootState();
+  const parsedIndex = parseInt(qIndex || 0, 10);
+
+  // 如果題目換了，重置計票
+  if (state.qIndex !== parsedIndex) {
+    state = {
+      active: status === 'open',
+      qIndex: parsedIndex,
+      status: status || 'open',
+      counts: { A: 0, B: 0, C: 0, D: 0 },
+      voters: [],
+      correctOption: correctOption || ''
+    };
+  } else {
+    state.active = (status === 'open');
+    state.status = status || state.status;
+    if (correctOption) state.correctOption = correctOption;
+  }
+
+  cache.put(CACHE_KEY_KAHOOT, JSON.stringify(state), 600);
+  return { status: 'success', state: state };
+}
+
+function handleKahootAnswer(name, school, qIndex, option) {
+  if (!name || !option) return { status: 'error', message: '缺少姓名或選項' };
+  
+  const cache = CacheService.getScriptCache();
+  const state = getKahootState();
+  const opt = String(option).toUpperCase();
+
+  if (state.status !== 'open') {
+    return { status: 'closed', message: '目前非作答時間' };
+  }
+
+  const existingIdx = state.voters.findIndex(v => v.name === name);
+  if (existingIdx !== -1) {
+    // 更改作答
+    const oldOpt = state.voters[existingIdx].option;
+    if (state.counts[oldOpt] > 0) state.counts[oldOpt]--;
+    state.voters[existingIdx].option = opt;
+  } else {
+    // 新作答
+    state.voters.push({ name: name, school: school, option: opt, timestamp: Date.now() });
+  }
+
+  state.counts[opt] = (state.counts[opt] || 0) + 1;
+  cache.put(CACHE_KEY_KAHOOT, JSON.stringify(state), 600);
+
+  return { status: 'success', currentOption: opt, totalVoters: state.voters.length };
+}
+
+function resetKahootState() {
+  const cache = CacheService.getScriptCache();
+  const state = {
+    active: false,
+    qIndex: 0,
+    status: 'idle',
+    counts: { A: 0, B: 0, C: 0, D: 0 },
+    voters: [],
+    correctOption: ''
+  };
+  cache.put(CACHE_KEY_KAHOOT, JSON.stringify(state), 600);
+  return { status: 'success', state: state };
 }
 
 // ======================== 快取搶答引擎 (CacheService Buzzer Engine) ========================
@@ -98,7 +208,7 @@ function startBuzzerRound() {
     startTime: now,
     list: []
   };
-  cache.put(CACHE_KEY_BUZZER, JSON.stringify(state), 600); // 快取保留 10 分鐘
+  cache.put(CACHE_KEY_BUZZER, JSON.stringify(state), 600);
   return { status: 'success', active: true, roundId: state.roundId };
 }
 
@@ -127,7 +237,6 @@ function handleBuzz(name, school, roundId) {
     return { status: 'expired', message: '非當前搶答回合' };
   }
 
-  // 檢查是否已在名單中
   const existingIdx = state.list.findIndex(item => item.name === name);
   if (existingIdx !== -1) {
     return {
