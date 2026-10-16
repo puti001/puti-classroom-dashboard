@@ -1000,7 +1000,8 @@
 
     // ---------------- QR Code 與 GAS 設定 ----------------
     function loadSavedConfig() {
-      const savedGas = localStorage.getItem('puti_gas_url') || 'https://script.google.com/macros/s/AKfycbxYOUR_DEPLOYMENT_ID/exec';
+      const defaultUrl = 'https://script.google.com/macros/s/AKfycbwy9do0o09MW3aLEjN-WOqBMuCdcHefo59MJnERpaT9VeY9kzlPqIc7yF7GoXhFhp59IA/exec';
+      const savedGas = localStorage.getItem('puti_gas_url') || defaultUrl;
       document.getElementById('configGasUrl').value = savedGas;
       updateQRCode(savedGas);
     }
