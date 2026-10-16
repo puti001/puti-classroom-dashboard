@@ -56,198 +56,10 @@
       letter-spacing: -2px;
     }
 
-    /* ================= 經典 3D 機械翻頁時鐘 (Retro Flip Clock) ================= */
-    .flip-clock-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      user-select: none;
-      perspective: 1200px;
-    }
-
-    .flip-unit {
-      position: relative;
-      width: 4.8rem;
-      height: 7.2rem;
-      font-family: 'Teko', sans-serif;
-      font-size: 7.2rem;
-      font-weight: 700;
-      line-height: 7.2rem;
-      border-radius: 0.85rem;
-      box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.3), 0 6px 12px -2px rgba(0, 0, 0, 0.15);
-      background: #181B22;
-    }
-
-    @media (min-width: 640px) {
-      .flip-unit {
-        width: 6.8rem;
-        height: 10.2rem;
-        font-size: 10.2rem;
-        line-height: 10.2rem;
-        border-radius: 1.1rem;
-      }
-      .flip-clock-wrapper { gap: 1rem; }
-    }
-
-    @media (min-width: 1024px) {
-      .flip-unit {
-        width: 8.8rem;
-        height: 13.2rem;
-        font-size: 13.2rem;
-        line-height: 13.2rem;
-        border-radius: 1.3rem;
-      }
-      .flip-clock-wrapper { gap: 1.4rem; }
-    }
-
-    /* 上半部與下半部葉片 */
-    .flip-unit .card-half {
-      position: absolute;
-      left: 0;
-      right: 0;
-      width: 100%;
-      height: 50%;
-      overflow: hidden;
-      background: #181B22;
-      color: #F8FAFC;
-      text-align: center;
-    }
-
-    .flip-unit .card-top {
-      top: 0;
-      border-top-left-radius: inherit;
-      border-top-right-radius: inherit;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.8);
-      transform-origin: bottom;
-    }
-
-    .flip-unit .card-bottom {
-      bottom: 0;
-      border-bottom-left-radius: inherit;
-      border-bottom-right-radius: inherit;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      transform-origin: top;
-    }
-
-    /* 文字對齊：下半部往上拉 50% 拼出完整數字 */
-    .flip-unit .card-top span {
-      display: block;
-      transform: translateY(0);
-    }
-    .flip-unit .card-bottom span {
-      display: block;
-      transform: translateY(-50%);
-    }
-
-    /* 左右兩側復古金屬轉軸卡扣卡榫 */
-    .flip-unit::before,
-    .flip-unit::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 0.35rem;
-      height: 0.75rem;
-      background: #64748B;
-      border-radius: 0.2rem;
-      z-index: 20;
-      transform: translateY(-50%);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.4);
-    }
-    .flip-unit::before { left: -0.15rem; }
-    .flip-unit::after { right: -0.15rem; }
-
-    /* 翻轉動作中的動態葉片 */
-    .flip-unit .leaf-flip-top {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 50%;
-      overflow: hidden;
-      background: #181B22;
-      color: #F8FAFC;
-      text-align: center;
-      border-top-left-radius: inherit;
-      border-top-right-radius: inherit;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.8);
-      transform-origin: bottom;
-      backface-visibility: hidden;
-      z-index: 10;
-      animation: flip-card-down 0.26s ease-in forwards;
-    }
-
-    .flip-unit .leaf-flip-bottom {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 50%;
-      overflow: hidden;
-      background: #181B22;
-      color: #F8FAFC;
-      text-align: center;
-      border-bottom-left-radius: inherit;
-      border-bottom-right-radius: inherit;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      transform-origin: top;
-      backface-visibility: hidden;
-      z-index: 11;
-      transform: rotateX(90deg);
-      animation: flip-card-up 0.26s 0.26s ease-out forwards;
-    }
-    .flip-unit .leaf-flip-bottom span {
-      display: block;
-      transform: translateY(-50%);
-    }
-
-    @keyframes flip-card-down {
-      0% { transform: rotateX(0deg); filter: brightness(1); }
-      100% { transform: rotateX(-90deg); filter: brightness(0.4); }
-    }
-
-    @keyframes flip-card-up {
-      0% { transform: rotateX(90deg); filter: brightness(1.7); }
-      100% { transform: rotateX(0deg); filter: brightness(1); }
-    }
-
-    /* 冒號分隔符 */
-    .flip-separator {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-      justify-content: center;
-      align-items: center;
-      padding: 0 0.2rem;
-    }
-    .flip-separator .dot {
-      width: 0.8rem;
-      height: 0.8rem;
-      background: #4F46E5;
-      border-radius: 9999px;
-      box-shadow: 0 0 12px rgba(79, 70, 229, 0.4);
-    }
-    @media (min-width: 640px) {
-      .flip-separator { gap: 2.5rem; padding: 0 0.4rem; }
-      .flip-separator .dot { width: 1.1rem; height: 1.1rem; }
-    }
-    @media (min-width: 1024px) {
-      .flip-separator { gap: 3.5rem; padding: 0 0.6rem; }
-      .flip-separator .dot { width: 1.3rem; height: 1.3rem; }
-    }
-
-    /* AM/PM 翻牌卡片 */
-    .flip-ampm-card {
-      width: 3.5rem;
-      height: 7.2rem;
-      font-size: 2.2rem;
-      line-height: 7.2rem;
-    }
-    @media (min-width: 640px) {
-      .flip-ampm-card { width: 4.8rem; height: 10.2rem; font-size: 3.2rem; line-height: 10.2rem; }
-    }
-    @media (min-width: 1024px) {
-      .flip-ampm-card { width: 5.8rem; height: 13.2rem; font-size: 4rem; line-height: 13.2rem; }
+    /* ================= 課堂大螢幕數字時鐘 (Digital Clock) ================= */
+    .digital-display {
+      font-family: var(--font-mono);
+      letter-spacing: -2px;
     }
 
     /* 滾動條美化（淺色） */
@@ -292,7 +104,7 @@
     <!-- 中間 Tab 導航列 -->
     <nav class="flex items-center bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200">
       <button onclick="switchTab('clock')" id="tabBtn-clock" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-indigo-700 bg-white shadow-sm border border-slate-200/60">
-        <i class="fa-solid fa-clock text-indigo-600"></i> 翻頁時鐘
+        <i class="fa-solid fa-clock text-indigo-600"></i> 課堂時鐘
       </button>
       <button onclick="switchTab('timer')" id="tabBtn-timer" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
         <i class="fa-solid fa-stopwatch"></i> 計時器
@@ -533,76 +345,44 @@
             <button onclick="toggleClockFormat()" id="btnClockFormat" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition border border-slate-200">
               24 小時制
             </button>
-            
-            <!-- 翻牌音效開關 -->
-            <button onclick="toggleFlipSound()" id="btnFlipSound" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition border border-slate-200 flex items-center gap-1.5" title="翻牌機械音效">
-              <i class="fa-solid fa-volume-high text-indigo-600" id="flipSoundIcon"></i> <span>音效: 開</span>
-            </button>
           </div>
         </div>
 
-        <!-- 巨型 3D 機械翻頁時鐘核心舞台 -->
+        <!-- 巨型課堂大螢幕時鐘核心區 -->
         <div class="my-auto py-8 sm:py-12 w-full flex flex-col items-center justify-center">
-          <div class="flip-clock-wrapper">
-            
-            <!-- AM / PM 翻牌卡片 (12H 制時顯示) -->
-            <div id="unit-ampm" class="flip-unit flip-ampm-card hidden">
-              <div class="card-half card-top"><span id="ampm-top">AM</span></div>
-              <div class="card-half card-bottom"><span id="ampm-bottom">AM</span></div>
+          <div class="flex items-center justify-center gap-3 sm:gap-6 select-none flex-wrap sm:flex-nowrap">
+            <!-- AM / PM 標籤 (12H 制顯示) -->
+            <div id="clockAmpmBadge" class="hidden bg-indigo-50 border-2 border-indigo-200 text-indigo-700 font-extrabold text-2xl sm:text-4xl px-4 py-3 rounded-2xl shadow-sm self-center">
+              AM
             </div>
 
-            <!-- 時 (十位 + 個位) -->
-            <div class="flip-group">
-              <div id="card-h1" class="flip-unit">
-                <div class="card-half card-top"><span id="h1-top">0</span></div>
-                <div class="card-half card-bottom"><span id="h1-bottom">0</span></div>
-              </div>
-              <div id="card-h2" class="flip-unit">
-                <div class="card-half card-top"><span id="h2-top">9</span></div>
-                <div class="card-half card-bottom"><span id="h2-bottom">9</span></div>
-              </div>
+            <!-- 時 -->
+            <div class="bg-white border-2 border-indigo-100 rounded-3xl p-6 sm:p-10 shadow-xl min-w-[130px] sm:min-w-[200px] text-center">
+              <span id="flipHours" class="digital-display text-7xl sm:text-9xl md:text-[10rem] font-black text-indigo-950">09</span>
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 border-t border-slate-100 pt-1">HOURS</div>
             </div>
 
             <!-- 冒號 -->
-            <div class="flip-separator">
-              <div class="dot"></div>
-              <div class="dot"></div>
-            </div>
+            <span class="text-5xl sm:text-8xl font-black text-indigo-400 animate-pulse">:</span>
 
-            <!-- 分 (十位 + 個位) -->
-            <div class="flip-group">
-              <div id="card-m1" class="flip-unit">
-                <div class="card-half card-top"><span id="m1-top">3</span></div>
-                <div class="card-half card-bottom"><span id="m1-bottom">3</span></div>
-              </div>
-              <div id="card-m2" class="flip-unit">
-                <div class="card-half card-top"><span id="m2-top">0</span></div>
-                <div class="card-half card-bottom"><span id="m2-bottom">0</span></div>
-              </div>
+            <!-- 分 -->
+            <div class="bg-white border-2 border-indigo-100 rounded-3xl p-6 sm:p-10 shadow-xl min-w-[130px] sm:min-w-[200px] text-center">
+              <span id="flipMinutes" class="digital-display text-7xl sm:text-9xl md:text-[10rem] font-black text-indigo-950">30</span>
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 border-t border-slate-100 pt-1">MINUTES</div>
             </div>
 
             <!-- 冒號 -->
-            <div class="flip-separator">
-              <div class="dot"></div>
-              <div class="dot"></div>
-            </div>
+            <span class="text-5xl sm:text-8xl font-black text-indigo-400 animate-pulse">:</span>
 
-            <!-- 秒 (十位 + 個位) -->
-            <div class="flip-group">
-              <div id="card-s1" class="flip-unit">
-                <div class="card-half card-top"><span id="s1-top">0</span></div>
-                <div class="card-half card-bottom"><span id="s1-bottom">0</span></div>
-              </div>
-              <div id="card-s2" class="flip-unit">
-                <div class="card-half card-top"><span id="s2-top">0</span></div>
-                <div class="card-half card-bottom"><span id="s2-bottom">0</span></div>
-              </div>
+            <!-- 秒 -->
+            <div class="bg-white border-2 border-rose-100 rounded-3xl p-6 sm:p-10 shadow-xl min-w-[130px] sm:min-w-[200px] text-center">
+              <span id="flipSeconds" class="digital-display text-7xl sm:text-9xl md:text-[10rem] font-black text-rose-500">00</span>
+              <div class="text-[11px] font-bold text-rose-400 uppercase tracking-widest mt-2 border-t border-rose-50 pt-1">SECONDS</div>
             </div>
-
           </div>
 
           <div class="text-xs text-slate-400 font-bold tracking-widest mt-8 uppercase flex items-center justify-center gap-2">
-            <i class="fa-solid fa-hourglass-half text-indigo-400"></i> RETRO MECHANICAL FLIP CLOCK ‧ 經典機械翻頁鐘
+            <i class="fa-solid fa-clock text-indigo-400"></i> REALTIME CLASSROOM CLOCK ‧ 大螢幕課堂時鐘
           </div>
         </div>
 
@@ -1734,75 +1514,23 @@
       playSound('click');
     }
 
-    function toggleFlipSound() {
-      isFlipSoundEnabled = !isFlipSoundEnabled;
-      const btn = document.getElementById('btnFlipSound');
-      if (btn) {
-        if (isFlipSoundEnabled) {
-          btn.innerHTML = '<i class="fa-solid fa-volume-high text-indigo-600"></i> <span>音效: 開</span>';
-          playSound('click');
-        } else {
-          btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-slate-400"></i> <span>音效: 關</span>';
-        }
+    // ---------------- 課堂時鐘核心邏輯 (Classroom Clock Engine) ----------------
+    let is24HourFormat = true;
+
+    function toggleClockFormat() {
+      is24HourFormat = !is24HourFormat;
+      const btn = document.getElementById('btnClockFormat');
+      if (btn) btn.innerText = is24HourFormat ? '24 小時制' : '12 小時制';
+      const ampmBadge = document.getElementById('clockAmpmBadge');
+      if (ampmBadge) {
+        if (is24HourFormat) ampmBadge.classList.add('hidden');
+        else ampmBadge.classList.remove('hidden');
       }
+      updateClock();
+      playSound('click');
     }
 
-    function playFlipTickSound() {
-      if (!isFlipSoundEnabled) return;
-      try {
-        const ctx = getAudioContext();
-        const now = ctx.currentTime;
-        // 擬真卡片翻落聲：高頻短促微擊
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(450, now);
-        osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
-        gain.gain.setValueAtTime(0.08, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-        osc.start(now);
-        osc.stop(now + 0.045);
-      } catch (e) {}
-    }
-
-    // 翻轉單一卡片核心動畫
-    function flipCard(cardId, newChar) {
-      const cardEl = document.getElementById(cardId);
-      if (!cardEl) return;
-
-      const topSpan = cardEl.querySelector('.card-top span');
-      const bottomSpan = cardEl.querySelector('.card-bottom span');
-      if (!topSpan || !bottomSpan) return;
-
-      const oldChar = topSpan.innerText;
-      if (oldChar === String(newChar)) return; // 沒變就不翻
-
-      // 建立 3D 翻轉葉片
-      const leafTop = document.createElement('div');
-      leafTop.className = 'leaf-flip-top';
-      leafTop.innerHTML = `<span>${oldChar}</span>`;
-
-      const leafBottom = document.createElement('div');
-      leafBottom.className = 'leaf-flip-bottom';
-      leafBottom.innerHTML = `<span>${newChar}</span>`;
-
-      // 底層上半部立即就位顯示新字，下半部維持舊字
-      topSpan.innerText = newChar;
-
-      cardEl.appendChild(leafTop);
-      cardEl.appendChild(leafBottom);
-
-      // 動畫結束後更新底層下半部，並移除動態葉片
-      setTimeout(() => {
-        bottomSpan.innerText = newChar;
-        leafTop.remove();
-        leafBottom.remove();
-      }, 550);
-    }
-
-    function updateFlipClock(force = false) {
+    function updateClock() {
       const now = new Date();
       let hours = now.getHours();
       const minutes = now.getMinutes();
@@ -1813,31 +1541,21 @@
         ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
         if (hours === 0) hours = 12;
+        const ampmBadge = document.getElementById('clockAmpmBadge');
+        if (ampmBadge) ampmBadge.innerText = ampm;
       }
 
       const hStr = String(hours).padStart(2, '0');
       const mStr = String(minutes).padStart(2, '0');
       const sStr = String(seconds).padStart(2, '0');
 
-      if (!is24HourFormat) {
-        flipCard('unit-ampm', ampm);
-      }
+      const hEl = document.getElementById('flipHours');
+      const mEl = document.getElementById('flipMinutes');
+      const sEl = document.getElementById('flipSeconds');
+      if (hEl) hEl.innerText = hStr;
+      if (mEl) mEl.innerText = mStr;
+      if (sEl) sEl.innerText = sStr;
 
-      const s2El = document.querySelector('#card-s2 .card-top span');
-      const prevSec = s2El ? s2El.innerText : '';
-      
-      flipCard('card-h1', hStr[0]);
-      flipCard('card-h2', hStr[1]);
-      flipCard('card-m1', mStr[0]);
-      flipCard('card-m2', mStr[1]);
-      flipCard('card-s1', sStr[0]);
-      flipCard('card-s2', sStr[1]);
-
-      if (prevSec !== sStr[1]) {
-        playFlipTickSound();
-      }
-
-      // 更新日期
       const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const dateElem = document.getElementById('clockDateDisplay');
       if (dateElem) {
@@ -1846,48 +1564,8 @@
     }
 
     function startFlipClock() {
-      // 初始立即設定一次數字
-      const now = new Date();
-      let hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
-
-      let ampm = 'AM';
-      if (!is24HourFormat) {
-        ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        if (hours === 0) hours = 12;
-      }
-
-      const hStr = String(hours).padStart(2, '0');
-      const mStr = String(minutes).padStart(2, '0');
-      const sStr = String(seconds).padStart(2, '0');
-
-      ['card-h1', 'card-h2', 'card-m1', 'card-m2', 'card-s1', 'card-s2', 'unit-ampm'].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        let char = '0';
-        if (id === 'card-h1') char = hStr[0];
-        if (id === 'card-h2') char = hStr[1];
-        if (id === 'card-m1') char = mStr[0];
-        if (id === 'card-m2') char = mStr[1];
-        if (id === 'card-s1') char = sStr[0];
-        if (id === 'card-s2') char = sStr[1];
-        if (id === 'unit-ampm') char = ampm;
-
-        const topSpan = el.querySelector('.card-top span');
-        const bottomSpan = el.querySelector('.card-bottom span');
-        if (topSpan) topSpan.innerText = char;
-        if (bottomSpan) bottomSpan.innerText = char;
-      });
-
-      const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-      const dateElem = document.getElementById('clockDateDisplay');
-      if (dateElem) {
-        dateElem.innerText = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
-      }
-
-      setInterval(updateFlipClock, 1000);
+      updateClock();
+      setInterval(updateClock, 1000);
     }
 
     // ---------------- 課堂計時器與倒計時 ----------------
