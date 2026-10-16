@@ -145,6 +145,12 @@
         </button>
       </div>
 
+      <!-- 一鍵直達 Google 簽到試算表 -->
+      <a href="https://docs.google.com/spreadsheets/d/1t-hjQk5zBM27_kN-4knh39oyeobSNbvV_FS_weZTGeA/edit" target="_blank" title="開啟研習簽到 Google 試算表" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition flex items-center gap-1.5 text-xs font-bold shadow-sm">
+        <i class="fa-solid fa-table text-emerald-600"></i>
+        <span class="hidden md:inline">簽到試算表</span>
+      </a>
+
       <button onclick="openConfigModal()" title="設定 GAS 串接網址" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
         <i class="fa-solid fa-gear"></i>
       </button>
@@ -890,8 +896,24 @@
         <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
       <p class="text-xs text-slate-500 leading-relaxed">
-        將您部署好的 Google Apps Script 網頁應用程式 URL（例如：<code class="text-indigo-600 font-mono bg-indigo-50 px-1 py-0.5 rounded">https://script.google.com/macros/s/.../exec</code>）貼在下方，QR Code 與同步按鈕將自動切換為該連結。
+        將您部署好的 Google Apps Script 網頁應用程式 URL 貼在下方，QR Code 與同步按鈕將自動切換為該連結。
       </p>
+
+      <!-- 快捷入口卡片 -->
+      <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+        <div class="text-[11px] font-black text-slate-600 flex items-center gap-1.5">
+          <i class="fa-solid fa-link text-indigo-600"></i> 研習雲端資源一鍵直達：
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <a href="https://docs.google.com/spreadsheets/d/1t-hjQk5zBM27_kN-4knh39oyeobSNbvV_FS_weZTGeA/edit" target="_blank" class="px-3 py-2 rounded-xl bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold flex items-center gap-2 transition shadow-sm">
+            <i class="fa-solid fa-table"></i> 開啟 Google 簽到試算表
+          </a>
+          <a href="https://github.com/puti001/puti-classroom-dashboard" target="_blank" class="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold flex items-center gap-2 transition shadow-sm">
+            <i class="fa-brands fa-github"></i> 開啟 GitHub 專案倉庫
+          </a>
+        </div>
+      </div>
+
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1">GAS Web App 網址：</label>
         <input type="url" id="configGasUrl" placeholder="https://script.google.com/macros/s/.../exec"
