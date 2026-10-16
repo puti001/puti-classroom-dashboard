@@ -445,6 +445,9 @@
           </div>
 
           <div class="flex items-center gap-3">
+            <button onclick="openKahootManagerModal()" class="px-3.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-black flex items-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-folder-open text-purple-600"></i> 📚 題庫管理 (匯入/匯出)
+            </button>
             <button onclick="zoomNoticeQr()" class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-black flex items-center gap-1.5 transition shadow-sm">
               <i class="fa-solid fa-qrcode text-indigo-600"></i> 📱 放大學員進場 QR Code
             </button>
@@ -1123,6 +1126,81 @@
       </div>
       <div id="qrZoomCanvas" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-md flex items-center justify-center"></div>
       <p class="text-xs text-slate-500 font-bold">大尺寸清晰碼，方便教室各角落掃描</p>
+    </div>
+  </div>
+
+  <!-- 8. Kahoot 題庫管理 (匯入/匯出) Modal -->
+  <div id="kahootManagerModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl space-y-5 max-h-[90vh] flex flex-col">
+      <!-- 頂部標題與關閉 -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+        <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-purple-600"></i> Kahoot! 題庫管理（匯入 / 匯出）
+        </h3>
+        <button onclick="closeKahootManagerModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- 可捲動核心區 -->
+      <div class="overflow-y-auto space-y-5 pr-1 text-left text-xs text-slate-600">
+        <!-- 快速功能按鈕 -->
+        <div class="flex flex-wrap items-center gap-2.5 pb-2 border-b border-slate-100">
+          <button onclick="downloadKahootQuestionsJson()" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold border border-indigo-200 flex items-center gap-1.5 transition shadow-sm">
+            <i class="fa-solid fa-file-arrow-down"></i> 下載題庫 JSON 檔
+          </button>
+          <button onclick="copyKahootQuestionsJson()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-200 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-copy"></i> 複製題庫 JSON 代碼
+          </button>
+          <button onclick="resetKahootQuestionsToDefault()" class="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold border border-rose-200 flex items-center gap-1.5 transition ml-auto">
+            <i class="fa-solid fa-rotate-left"></i> 重設為預設題庫
+          </button>
+        </div>
+
+        <!-- 匯入題庫區塊 -->
+        <div class="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-file-import text-purple-600"></i> 匯入全新題庫
+            </span>
+            <label class="cursor-pointer text-[11px] font-bold text-purple-700 hover:underline flex items-center gap-1">
+              <i class="fa-solid fa-upload"></i> 選擇本機 .json 檔案
+              <input type="file" id="kahootJsonFileInput" accept=".json" class="hidden" onchange="handleKahootJsonFileUpload(event)">
+            </label>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            可直接貼上 JSON 代碼或選擇 JSON 檔上傳。格式需為題目物件陣列，支援 <code>title</code>, <code>category</code>, <code>options</code> (A/B/C/D), <code>correct</code>, <code>explanation</code>。
+          </p>
+          <textarea id="kahootJsonTextarea" rows="4" placeholder="在此貼上題庫 JSON 陣列代碼..." class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs font-mono outline-none focus:ring-2 focus:ring-purple-400 resize-none leading-relaxed"></textarea>
+          <div class="flex justify-between items-center">
+            <button onclick="fillSampleKahootJson()" class="text-[11px] text-indigo-600 hover:underline font-bold">
+              帶入範例格式
+            </button>
+            <button onclick="applyImportedKahootJson()" class="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-bolt"></i> 驗證並立即套用新題庫
+            </button>
+          </div>
+        </div>
+
+        <!-- 目前已載入題目列表 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-slate-800 text-xs">
+              目前題庫清單（共 <span id="kahootQuestionCountSpan" class="text-purple-600 font-black">0</span> 題）
+            </span>
+          </div>
+          <div id="kahootManagerQuestionsList" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <!-- 動態渲染題目清單 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部按鈕 -->
+      <div class="pt-2 border-t border-slate-100 flex justify-end shrink-0">
+        <button onclick="closeKahootManagerModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+          關閉
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2953,7 +3031,7 @@
     }
 
     // ================================= 模組: Kahoot 式現場即時問答系統 (Host Kahoot Engine) =================================
-    const KAHOOT_QUESTIONS = [
+    const DEFAULT_KAHOOT_QUESTIONS = [
       {
         id: 1,
         category: "AI 幻覺與假訊息辨識",
@@ -3021,6 +3099,198 @@
       }
     ];
 
+    let KAHOOT_QUESTIONS = [];
+
+    function loadKahootQuestionsFromStorage() {
+      try {
+        const saved = localStorage.getItem('puti_kahoot_questions');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            KAHOOT_QUESTIONS = parsed;
+            return;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse saved kahoot questions', e);
+      }
+      KAHOOT_QUESTIONS = JSON.parse(JSON.stringify(DEFAULT_KAHOOT_QUESTIONS));
+    }
+
+    function saveKahootQuestionsToStorage() {
+      localStorage.setItem('puti_kahoot_questions', JSON.stringify(KAHOOT_QUESTIONS));
+    }
+
+    function openKahootManagerModal() {
+      if (!KAHOOT_QUESTIONS || KAHOOT_QUESTIONS.length === 0) {
+        loadKahootQuestionsFromStorage();
+      }
+      renderKahootManagerList();
+      document.getElementById('kahootJsonTextarea').value = JSON.stringify(KAHOOT_QUESTIONS, null, 2);
+      document.getElementById('kahootManagerModal').classList.remove('hidden');
+      playSound('click');
+    }
+
+    function closeKahootManagerModal() {
+      document.getElementById('kahootManagerModal').classList.add('hidden');
+    }
+
+    function renderKahootManagerList() {
+      const container = document.getElementById('kahootManagerQuestionsList');
+      const countSpan = document.getElementById('kahootQuestionCountSpan');
+      if (countSpan) countSpan.innerText = KAHOOT_QUESTIONS.length;
+      if (!container) return;
+
+      if (!KAHOOT_QUESTIONS || KAHOOT_QUESTIONS.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-slate-400">目前題庫為空，請匯入題目或點擊「重設為預設題庫」</div>';
+        return;
+      }
+
+      container.innerHTML = KAHOOT_QUESTIONS.map((q, idx) => `
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start justify-between gap-3 hover:bg-slate-100/70 transition">
+          <div class="flex-1 space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 font-black text-[11px]">Q${idx + 1}</span>
+              <span class="px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 font-bold text-[10px]">${q.category || '未分類'}</span>
+              <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 font-bold text-[10px]">正解: ${q.correct}</span>
+            </div>
+            <div class="font-bold text-slate-800 text-xs">${q.title}</div>
+            <div class="text-[11px] text-slate-500">
+              A: ${q.options?.A || ''} | B: ${q.options?.B || ''} | C: ${q.options?.C || ''} | D: ${q.options?.D || ''}
+            </div>
+          </div>
+          <button onclick="deleteKahootQuestion(${idx})" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition" title="刪除此題">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function deleteKahootQuestion(idx) {
+      if (!confirm(`確定要刪除第 ${idx + 1} 題嗎？`)) return;
+      KAHOOT_QUESTIONS.splice(idx, 1);
+      if (KAHOOT_QUESTIONS.length === 0) {
+        KAHOOT_QUESTIONS = JSON.parse(JSON.stringify(DEFAULT_KAHOOT_QUESTIONS));
+        alert('題庫不可完全為空，已自動還原預設題庫。');
+      }
+      saveKahootQuestionsToStorage();
+      if (currentKahootIndex >= KAHOOT_QUESTIONS.length) {
+        currentKahootIndex = Math.max(0, KAHOOT_QUESTIONS.length - 1);
+      }
+      renderKahootNav();
+      loadKahootQuestion(currentKahootIndex);
+      renderKahootManagerList();
+      document.getElementById('kahootJsonTextarea').value = JSON.stringify(KAHOOT_QUESTIONS, null, 2);
+      playSound('trash');
+    }
+
+    function downloadKahootQuestionsJson() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(KAHOOT_QUESTIONS, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `kahoot_questions_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      playSound('click');
+    }
+
+    function copyKahootQuestionsJson() {
+      const jsonStr = JSON.stringify(KAHOOT_QUESTIONS, null, 2);
+      navigator.clipboard.writeText(jsonStr).then(() => {
+        playSound('scoreUp');
+        alert('📋 題庫 JSON 代碼已成功複製到剪貼簿！可直接貼給 AI 或備份。');
+      }).catch(() => {
+        alert('複製失敗，請手動複製下方文字框內的內容。');
+      });
+    }
+
+    function handleKahootJsonFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('kahootJsonTextarea').value = e.target.result;
+        applyImportedKahootJson();
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function applyImportedKahootJson() {
+      const raw = document.getElementById('kahootJsonTextarea').value.trim();
+      if (!raw) {
+        alert('請先貼上或上傳題庫 JSON 代碼！');
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('題庫必須是包含題目的陣列（Array）！');
+        }
+
+        // 格式防呆檢查
+        for (let i = 0; i < parsed.length; i++) {
+          const item = parsed[i];
+          if (!item.title) throw new Error(`第 ${i + 1} 題缺少 title（題目標題）！`);
+          if (!item.options || !item.options.A || !item.options.B || !item.options.C || !item.options.D) {
+            throw new Error(`第 ${i + 1} 題選項不完整，必須具備 A、B、C、D 四個選項！`);
+          }
+          if (!item.correct || !['A', 'B', 'C', 'D'].includes(item.correct.toUpperCase())) {
+            throw new Error(`第 ${i + 1} 題 correct（正確答案）必須是 A、B、C 或 D！`);
+          }
+          item.correct = item.correct.toUpperCase();
+          item.id = i + 1;
+        }
+
+        KAHOOT_QUESTIONS = parsed;
+        saveKahootQuestionsToStorage();
+        currentKahootIndex = 0;
+        renderKahootNav();
+        loadKahootQuestion(0);
+        renderKahootManagerList();
+        confetti({ particleCount: 50, spread: 70 });
+        playSound('cheer');
+        alert(`🎉 恭喜！成功匯入 ${parsed.length} 題全新題庫並已套用至大螢幕！`);
+      } catch (err) {
+        playSound('buzzerFail');
+        alert('❌ 題庫 JSON 解析失敗：\n' + err.message);
+      }
+    }
+
+    function fillSampleKahootJson() {
+      const sample = [
+        {
+          "id": 1,
+          "category": "國語閱讀理解",
+          "title": "閱讀記敘文時，想引導學生抓住文章的核心轉折，以下哪種問題層次最高？",
+          "options": {
+            "A": "主角今天早餐吃了什麼？",
+            "B": "故事發生在哪一個城市？",
+            "C": "如果主角在路口做了不同選擇，後續結局會如何改變？為什麼？",
+            "D": "課文第二段有幾個逗號？"
+          },
+          "correct": "C",
+          "explanation": "假設性推論與因果省思能帶領學生跳脫字面記憶，進入高階思辨！"
+        }
+      ];
+      document.getElementById('kahootJsonTextarea').value = JSON.stringify(sample, null, 2);
+      playSound('click');
+    }
+
+    function resetKahootQuestionsToDefault() {
+      if (!confirm('確定要還原回預設的 5 題經典題庫嗎？這將覆蓋您目前自訂的題目。')) return;
+      localStorage.removeItem('puti_kahoot_questions');
+      KAHOOT_QUESTIONS = JSON.parse(JSON.stringify(DEFAULT_KAHOOT_QUESTIONS));
+      currentKahootIndex = 0;
+      renderKahootNav();
+      loadKahootQuestion(0);
+      renderKahootManagerList();
+      document.getElementById('kahootJsonTextarea').value = JSON.stringify(KAHOOT_QUESTIONS, null, 2);
+      playSound('scoreUp');
+      alert('已成功恢復為預設 5 題題庫！');
+    }
+
     let currentKahootIndex = 0;
     let kahootCountdownSeconds = 30;
     let kahootCountdownTimer = null;
@@ -3029,8 +3299,14 @@
     let kahootVotersCache = [];
 
     function initKahootHost() {
+      if (!KAHOOT_QUESTIONS || KAHOOT_QUESTIONS.length === 0) {
+        loadKahootQuestionsFromStorage();
+      }
+      if (currentKahootIndex >= KAHOOT_QUESTIONS.length) {
+        currentKahootIndex = 0;
+      }
       renderKahootNav();
-      loadKahootQuestion(0);
+      loadKahootQuestion(currentKahootIndex);
     }
 
     function renderKahootNav() {
