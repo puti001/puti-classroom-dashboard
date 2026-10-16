@@ -473,10 +473,20 @@
                 </span>
               </div>
               <div class="flex items-center gap-3">
-                <!-- 倒數計時晶片 -->
-                <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-black">
-                  <i class="fa-solid fa-stopwatch animate-spin"></i>
-                  <span id="kahootTimerText">30s</span>
+                <!-- 倒數時間自訂切換器 -->
+                <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-black shadow-sm">
+                  <i class="fa-solid fa-stopwatch text-rose-500"></i>
+                  <span id="kahootTimerText" class="font-mono text-xs">30s</span>
+                  <select id="kahootDurationSelect" onchange="changeKahootDuration(this.value)" class="ml-1 bg-white border border-rose-200 rounded-lg text-xs font-bold text-rose-700 px-1.5 py-0.5 outline-none cursor-pointer hover:bg-rose-100/50">
+                    <option value="10">10 秒 (極速手速)</option>
+                    <option value="15">15 秒 (快問快答)</option>
+                    <option value="20">20 秒</option>
+                    <option value="30" selected>30 秒 (標準節奏)</option>
+                    <option value="45">45 秒</option>
+                    <option value="60">60 秒 (充裕思辨)</option>
+                    <option value="90">90 秒</option>
+                    <option value="120">120 秒 (深度討論)</option>
+                  </select>
                 </div>
                 <!-- 已答題人數計數器 -->
                 <div class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black">
@@ -3292,11 +3302,32 @@
     }
 
     let currentKahootIndex = 0;
-    let kahootCountdownSeconds = 30;
+    let kahootConfiguredDuration = parseInt(localStorage.getItem('puti_kahoot_duration') || '30', 10);
+    let kahootCountdownSeconds = kahootConfiguredDuration;
     let kahootCountdownTimer = null;
     let kahootPollTimer = null;
     let kahootState = 'idle';
     let kahootVotersCache = [];
+
+    function changeKahootDuration(val) {
+      kahootConfiguredDuration = parseInt(val, 10) || 30;
+      localStorage.setItem('puti_kahoot_duration', kahootConfiguredDuration);
+      if (kahootState !== 'open') {
+        kahootCountdownSeconds = kahootConfiguredDuration;
+        document.getElementById('kahootTimerText').innerText = `${kahootCountdownSeconds}s`;
+        updateKahootStartButtonText();
+      }
+      playSound('click');
+    }
+
+    function updateKahootStartButtonText() {
+      const btn = document.getElementById('btnStartKahoot');
+      const q = (KAHOOT_QUESTIONS && KAHOOT_QUESTIONS[currentKahootIndex]) ? KAHOOT_QUESTIONS[currentKahootIndex] : null;
+      const duration = (q && q.time) ? parseInt(q.time, 10) : kahootConfiguredDuration;
+      if (btn) {
+        btn.innerHTML = `<i class="fa-solid fa-play mr-1.5"></i> 開放作答 (${duration}秒)`;
+      }
+    }
 
     function initKahootHost() {
       if (!KAHOOT_QUESTIONS || KAHOOT_QUESTIONS.length === 0) {
@@ -3341,7 +3372,16 @@
       document.getElementById('kahootCurrentQBadge').innerText = `QUESTION ${idx + 1} / ${KAHOOT_QUESTIONS.length}`;
       document.getElementById('kahootCategoryBadge').innerText = q.category;
       document.getElementById('kahootQuestionTitle').innerText = q.title;
-      document.getElementById('kahootTimerText').innerText = '30s';
+
+      const effectiveDuration = q.time ? parseInt(q.time, 10) : kahootConfiguredDuration;
+      kahootCountdownSeconds = effectiveDuration;
+      document.getElementById('kahootTimerText').innerText = `${effectiveDuration}s`;
+      const durationSelect = document.getElementById('kahootDurationSelect');
+      if (durationSelect) {
+        durationSelect.value = String(effectiveDuration);
+      }
+      updateKahootStartButtonText();
+
       document.getElementById('kahootVoterCountText').innerText = '已作答 0 人';
       document.getElementById('kahootHostStatusBadge').innerText = '準備中';
       document.getElementById('kahootHostStatusBadge').className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200';
@@ -3415,8 +3455,11 @@
       const q = KAHOOT_QUESTIONS[currentKahootIndex];
       renderKahootOptions(q, false);
 
+      const effectiveDuration = (q && q.time) ? parseInt(q.time, 10) : kahootConfiguredDuration;
+      kahootCountdownSeconds = effectiveDuration;
+
       const statusBadge = document.getElementById('kahootHostStatusBadge');
-      statusBadge.innerText = '🔥 作答開放中 (30秒)';
+      statusBadge.innerText = `🔥 作答開放中 (${effectiveDuration}秒)`;
       statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow-md animate-pulse';
 
       document.getElementById('btnStartKahoot').disabled = true;
@@ -3424,7 +3467,6 @@
       document.getElementById('kahootExplanationCard').classList.add('hidden');
       document.getElementById('btnAwardKahoot').classList.add('hidden');
 
-      kahootCountdownSeconds = 30;
       document.getElementById('kahootTimerText').innerText = `${kahootCountdownSeconds}s`;
 
       const baseUrl = getGasBaseUrl().split('?')[0];
