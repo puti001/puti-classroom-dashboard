@@ -1240,6 +1240,17 @@
   <script>
     // ---------------- 全域狀態變數 ----------------
     let checkinList = [];
+    try {
+      const savedCheckinsStr = localStorage.getItem('puti_cached_checkins');
+      if (savedCheckinsStr) {
+        const parsed = JSON.parse(savedCheckinsStr);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          checkinList = parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('讀取暫存名冊失敗:', e);
+    }
     let pickedHistory = [];
     let pickMode = 1;
     let isRolling = false;
@@ -1339,7 +1350,19 @@
 
       if (checkinList.length === 0) {
         loadSampleData();
+      } else {
+        renderCheckinList();
+        renderTeams();
+        renderLeaderboard();
       }
+
+      // 啟動時自動從 Google 試算表同步真實報到名冊（靜默模式，不跳 alert 提示）
+      syncFromGAS(true);
+
+      // 定期每 25 秒於背景自動同步試算表最新名單，讓現場大螢幕即時反映報到人數
+      setInterval(() => {
+        syncFromGAS(true);
+      }, 25000);
 
       // 支援左右方向鍵或簡報筆切換公佈欄
       window.addEventListener('keydown', (e) => {
@@ -1555,46 +1578,83 @@
       renderCheckinList();
       generateTeams();
       renderLeaderboard();
+      localStorage.removeItem('puti_cached_checkins');
     }
 
     function clearAllCheckins() {
       if (confirm('確定要清空目前所有報到名單嗎？')) {
         checkinList = [];
         pickedHistory = [];
+        localStorage.removeItem('puti_cached_checkins');
         renderCheckinList();
         renderHistoryList();
         generateTeams();
+        renderLeaderboard();
       }
     }
 
-    // 透過 GAS API 同步名冊
-    function syncFromGAS() {
+    // 透過 GAS API 同步名冊 (支援 silent 靜默背景同步模式)
+    function syncFromGAS(silent = false) {
       const url = localStorage.getItem('puti_gas_url');
       if (!url || url.includes('YOUR_DEPLOYMENT_ID')) {
-        alert('請先在右上角「設定」填入真實的 GAS Web App URL 才能同步！');
-        openConfigModal();
+        if (!silent) {
+          alert('請先在右上角「設定」填入真實的 GAS Web App URL 才能同步！');
+          openConfigModal();
+        }
         return;
       }
 
       const syncIcon = document.getElementById('syncIcon');
-      syncIcon.classList.add('fa-spin');
+      if (syncIcon) syncIcon.classList.add('fa-spin');
 
       fetch(`${url}?action=getCheckins`)
         .then(res => res.json())
         .then(data => {
-          syncIcon.classList.remove('fa-spin');
+          if (syncIcon) syncIcon.classList.remove('fa-spin');
           if (Array.isArray(data)) {
-            checkinList = data;
-            renderCheckinList();
-            generateTeams();
-            alert(`同步完成！共取得 ${data.length} 位研習老師名單。`);
+            if (data.length > 0) {
+              // 保留既有積分與抽獎次數
+              const prevMap = new Map();
+              checkinList.forEach(t => {
+                const key = `${t.name}_${t.school}`;
+                prevMap.set(key, { score: t.score || 0, lotteryCount: t.lotteryCount || 0 });
+              });
+
+              checkinList = data.map(t => {
+                const prev = prevMap.get(`${t.name}_${t.school}`);
+                return {
+                  ...t,
+                  score: prev ? prev.score : (t.score || 0),
+                  lotteryCount: prev ? prev.lotteryCount : (t.lotteryCount || 0)
+                };
+              });
+
+              localStorage.setItem('puti_cached_checkins', JSON.stringify(checkinList));
+              renderCheckinList();
+              generateTeams();
+              renderLeaderboard();
+
+              if (!silent) {
+                alert(`同步完成！共取得 ${data.length} 位研習老師名單。`);
+              }
+            } else {
+              if (!silent) {
+                alert('試算表目前尚無任何簽到資料。');
+              }
+            }
           } else {
-            alert('回傳格式異常：' + JSON.stringify(data));
+            if (!silent) {
+              alert('回傳格式異常：' + JSON.stringify(data));
+            }
           }
         })
         .catch(err => {
-          syncIcon.classList.remove('fa-spin');
-          alert('同步連線失敗，請確認 GAS 部署是否設定為「任何人皆可存取」：' + err);
+          if (syncIcon) syncIcon.classList.remove('fa-spin');
+          if (!silent) {
+            alert('同步連線失敗，請確認 GAS 部署是否設定為「任何人皆可存取」：' + err);
+          } else {
+            console.warn('背景自動同步名冊失敗:', err);
+          }
         });
     }
 
