@@ -1497,22 +1497,6 @@
       }
     }
 
-    // ---------------- 經典 3D 機械翻頁時鐘 (Retro Flip Clock Engine) ----------------
-    let is24HourFormat = true;
-    let isFlipSoundEnabled = false; // 預設靜音
-
-    function toggleClockFormat() {
-      is24HourFormat = !is24HourFormat;
-      const btn = document.getElementById('btnClockFormat');
-      if (btn) btn.innerText = is24HourFormat ? '24 小時制' : '12 小時制';
-      const ampmUnit = document.getElementById('unit-ampm');
-      if (ampmUnit) {
-        if (is24HourFormat) ampmUnit.classList.add('hidden');
-        else ampmUnit.classList.remove('hidden');
-      }
-      updateFlipClock(true);
-      playSound('click');
-    }
 
     // ---------------- 課堂時鐘核心邏輯 (Classroom Clock Engine) ----------------
     let is24HourFormat = true;
