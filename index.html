@@ -1,0 +1,2394 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puti-AI | 課堂儀表板</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Share+Tech+Mono&display=swap');
+    
+    :root {
+      --bg-body: #FFFDF9;           /* 暖米白 */
+      --bg-surface: #FFFFFF;        /* 純白卡片 */
+      --primary: #4F46E5;           /* 經典靛藍 */
+      --primary-soft: #EEF2FF;      /* 柔和淡藍 */
+      --text-main: #1E293B;         /* 深炭灰 (不刺眼) */
+      --text-muted: #64748B;        /* 柔和灰 */
+      --border-color: #E2E8F0;      /* 淺柔邊框 */
+      --card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+      --font-main: 'Zen Maru Gothic', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+      --base-font-size: 18px;       /* 預設直接放大幾級 (標準 16px -> 18px) */
+    }
+
+    html {
+      font-size: var(--base-font-size);
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      overflow-x: hidden;
+      letter-spacing: 0.02em;
+    }
+
+    /* 淺色卡片標準規範 */
+    .warm-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--card-shadow);
+      border-radius: 24px;
+    }
+
+    /* 數字顯示器 */
+    .digital-display {
+      font-family: var(--font-mono);
+      letter-spacing: -2px;
+    }
+
+    /* 滾動條美化（淺色） */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- ================= 頂部導覽列 (Header & Mode Switcher) ================= -->
+  <header class="bg-white/95 backdrop-blur-md sticky top-0 z-40 border-b border-slate-200/80 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+    <!-- 左側 Title 與 狀態 -->
+    <div class="flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+        <i class="fa-solid fa-shapes text-xl"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-[12px] font-black tracking-widest text-indigo-600 uppercase">Puti-AI Workshop</span>
+          <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> 雲端連線就緒
+          </span>
+        </div>
+        <h1 class="text-xl font-black tracking-tight text-slate-800 flex items-center gap-2">
+          Puti-AI 課堂儀表板
+        </h1>
+      </div>
+    </div>
+
+    <!-- 中間 Tab 導航列 -->
+    <nav class="flex items-center bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200">
+      <button onclick="switchTab('clock')" id="tabBtn-clock" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-indigo-700 bg-white shadow-sm border border-slate-200/60">
+        <i class="fa-solid fa-clock text-indigo-600"></i> 翻頁時鐘
+      </button>
+      <button onclick="switchTab('timer')" id="tabBtn-timer" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-stopwatch"></i> 計時器
+      </button>
+      <button onclick="switchTab('checkin')" id="tabBtn-checkin" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-qrcode"></i> 報到名冊 <span id="checkinBadge" class="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full">0</span>
+      </button>
+      <button onclick="switchTab('roulette')" id="tabBtn-roulette" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-dice"></i> 隨機點名
+      </button>
+      <button onclick="switchTab('teams')" id="tabBtn-teams" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-users"></i> 分組計分
+      </button>
+      <button onclick="switchTab('leaderboard')" id="tabBtn-leaderboard" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-trophy text-amber-500"></i> 排行榜
+      </button>
+      <button onclick="switchTab('bulletin')" id="tabBtn-bulletin" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-bullhorn"></i> 公佈欄
+      </button>
+    </nav>
+
+    <!-- 右側功能：字體大小調節、全螢幕與設定 -->
+    <div class="flex items-center gap-2">
+      <!-- 字體放大/縮小控制群 -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+        <button onclick="adjustFontSize(-2)" title="縮小字體" class="w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center shadow-sm border border-slate-200 transition">
+          <i class="fa-solid fa-font text-[10px]"></i>-
+        </button>
+        <span id="currentFontSizeLabel" class="px-2 text-xs font-black text-indigo-600 select-none">18px</span>
+        <button onclick="adjustFontSize(2)" title="放大字體" class="w-8 h-8 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center justify-center shadow-sm border border-slate-200 transition">
+          <i class="fa-solid fa-font text-xs"></i>+
+        </button>
+      </div>
+
+      <button onclick="openConfigModal()" title="設定 GAS 串接網址" class="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+      <button onclick="toggleFullScreen()" title="切換全螢幕 (F11)" class="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition">
+        <i class="fa-solid fa-expand" id="fsIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 主工作區 (Main View Containers) ================= -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ------------------ 模組 1: 上課報到與研習名冊 ------------------ -->
+    <section id="view-checkin" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 左側：報到 QR Code 與 講者資訊卡 -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="warm-card p-6 text-center relative overflow-hidden">
+            <div class="inline-block px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-3 border border-indigo-100">
+              現場掃描 ‧ 手機即時報到
+            </div>
+            <h2 class="text-xl font-black text-slate-800 mb-1">研習簽到與教學痛點收集</h2>
+            <p class="text-xs text-slate-500 mb-5">請各位夥伴老師掃描 QR Code 填寫，資料即刻連線大螢幕！</p>
+
+            <!-- QR Code 容器 -->
+            <div class="bg-slate-50 p-4 rounded-3xl inline-block shadow-inner border border-slate-200">
+              <div id="qrcodeCanvas" class="w-[200px] h-[200px] flex items-center justify-center bg-white p-2 rounded-2xl shadow-sm"></div>
+            </div>
+
+            <!-- 自訂網址輸入/顯示 -->
+            <div class="mt-4 flex items-center justify-center gap-2">
+              <span id="displayCheckinUrl" class="text-xs text-slate-500 truncate max-w-[240px] font-mono">尚未設定網址</span>
+              <button onclick="copyCheckinUrl()" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+            </div>
+
+            <!-- 快捷手動新增報到者 -->
+            <div class="mt-6 pt-5 border-t border-slate-100">
+              <button onclick="openManualAddModal()" class="w-full py-2.5 px-4 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-plus"></i> 手動新增研習老師
+              </button>
+            </div>
+          </div>
+
+          <!-- 研習統計與痛點概覽 -->
+          <div class="warm-card p-6 space-y-4">
+            <h3 class="text-sm font-black text-slate-700 flex items-center gap-2">
+              <i class="fa-solid fa-chart-pie text-indigo-600"></i> 即時報到動態統計
+            </h3>
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                <div class="text-xs font-bold text-slate-500">已報到人數</div>
+                <div class="text-3xl font-black text-indigo-600 mt-1" id="statCheckinCount">0</div>
+              </div>
+              <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80">
+                <div class="text-xs font-bold text-slate-500">服務學校數</div>
+                <div class="text-3xl font-black text-emerald-600 mt-1" id="statSchoolCount">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右側：報到名冊與痛點留言牆 -->
+        <div class="lg:col-span-8 space-y-4">
+          <div class="warm-card p-6 flex flex-col h-[700px]">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div class="flex items-center gap-3">
+                <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+                  <i class="fa-solid fa-id-badge text-indigo-600"></i> 研習教師名冊與教學心聲
+                </h3>
+                <span class="text-xs text-slate-400">點擊卡片可放大查看詳細回饋</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="syncFromGAS()" class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition flex items-center gap-1.5">
+                  <i class="fa-solid fa-rotate" id="syncIcon"></i> 雲端同步
+                </button>
+                <button onclick="loadSampleData()" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition">
+                  載入模擬學員
+                </button>
+                <button onclick="clearAllCheckins()" class="px-3.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold border border-rose-200 transition">
+                  清空
+                </button>
+              </div>
+            </div>
+
+            <!-- 名冊滾動列表 -->
+            <div id="checkinListContainer" class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3">
+              <!-- 動態生成名單卡片 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------ 模組 2: 隨機點名與轉盤抽籤 ------------------ -->
+    <section id="view-roulette" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 點名展示主舞台 -->
+        <div class="lg:col-span-8 flex flex-col justify-center items-center warm-card p-8 lg:p-12 text-center min-h-[550px] relative overflow-hidden bg-gradient-to-b from-white to-slate-50">
+          <!-- 模式切換 (單人/雙人/快速閃爍) -->
+          <div class="flex items-center gap-2 mb-8 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+            <button onclick="setPickMode(1)" id="pickMode-1" class="px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-indigo-600 transition shadow-sm">抽 1 位老師</button>
+            <button onclick="setPickMode(2)" id="pickMode-2" class="px-4 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-indigo-600 transition">抽 2 位（同儕共學）</button>
+            <button onclick="setPickMode(4)" id="pickMode-4" class="px-4 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-indigo-600 transition">抽 4 位（各組代表）</button>
+          </div>
+
+          <!-- 閃爍大字牌 -->
+          <div class="w-full max-w-xl py-12 px-6 rounded-3xl bg-white border-2 border-indigo-200 shadow-xl relative">
+            <div class="text-xs uppercase tracking-widest text-indigo-600 font-extrabold mb-2" id="pickStatusText">READY TO PICK</div>
+            <div id="pickedNameDisplay" class="text-5xl sm:text-7xl font-black tracking-tight text-slate-800 transition-all transform duration-100 flex flex-wrap justify-center items-center gap-4 min-h-[100px]">
+              準備點名
+            </div>
+            <div id="pickedSchoolDisplay" class="text-base text-indigo-600 font-bold mt-3 min-h-[28px]">
+              按下下方按鈕開始隨機抽取
+            </div>
+          </div>
+
+          <!-- 抽籤控制按鈕 -->
+          <div class="mt-8 flex items-center gap-4">
+            <button id="startPickBtn" onclick="togglePickRolling()" class="px-10 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-lg font-black tracking-wider shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition flex items-center gap-3">
+              <i class="fa-solid fa-play"></i> <span>開始隨機抽籤</span>
+            </button>
+            <button onclick="giveBonusPointToPicked()" id="givePointBtn" class="hidden px-6 py-4 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 text-base font-bold transition flex items-center gap-2">
+              <i class="fa-solid fa-star text-amber-500"></i> 獎勵 +1 分
+            </button>
+          </div>
+        </div>
+
+        <!-- 右側：已中獎歷史與排除名單 -->
+        <div class="lg:col-span-4 warm-card p-6 flex flex-col h-[550px]">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="text-sm font-black text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left text-amber-500"></i> 本節已被抽中名單
+            </h3>
+            <button onclick="clearPickedHistory()" class="text-xs text-slate-400 hover:text-rose-600 transition">
+              重設紀錄
+            </button>
+          </div>
+          <div id="pickedHistoryList" class="flex-1 overflow-y-auto mt-3 space-y-2 pr-1">
+            <!-- 動態生成歷史名單 -->
+            <div class="text-xs text-slate-400 text-center py-10">尚無被抽中的老師</div>
+          </div>
+          <div class="pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="excludePickedCheckbox" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+              <span>不重複抽取已抽中的老師</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------ 模組 3: 智能分組 & 分組計分 ------------------ -->
+    <section id="view-teams" class="tab-content hidden space-y-6">
+      <!-- 控制列 -->
+      <div class="warm-card p-6 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4 flex-wrap">
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600">組別數量：</label>
+            <select id="teamCountSelect" onchange="generateTeams()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs text-slate-800 font-bold outline-none">
+              <option value="2">2 組（兩軍對壘）</option>
+              <option value="3">3 組</option>
+              <option value="4" selected>4 組（四大天王）</option>
+              <option value="5">5 組</option>
+              <option value="6">6 組</option>
+            </select>
+          </div>
+          <button onclick="generateTeams()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-shuffle"></i> 隨機打散自動分組
+          </button>
+          <button onclick="resetAllTeamScores()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200 transition">
+            分數歸零
+          </button>
+        </div>
+        <div class="text-xs text-indigo-700 bg-indigo-50 px-3.5 py-1.5 rounded-full border border-indigo-100 font-medium">
+          💡 點擊「+1 / -1」為小組積分，獲勝小組可觸發全螢幕勝利特效！
+        </div>
+      </div>
+
+      <!-- 分組計分卡片網格 -->
+      <div id="teamsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- 動態渲染小組卡片 -->
+      </div>
+    </section>
+
+    <!-- ------------------ 模組 0: 獨立大螢幕翻頁時鐘 (預設首頁) ------------------ -->
+    <section id="view-clock" class="tab-content block space-y-6">
+      <div class="warm-card p-8 sm:p-14 flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[600px] bg-gradient-to-b from-white via-indigo-50/20 to-slate-50 border-2 border-indigo-100 shadow-xl">
+        <div class="w-full flex items-center justify-between pb-6 border-b border-slate-100">
+          <div class="text-sm font-extrabold text-indigo-600 tracking-widest uppercase flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            <i class="fa-solid fa-earth-asia"></i> 台灣標準時間 (Asia/Taipei)
+          </div>
+          <div id="clockDateDisplay" class="text-base font-bold text-slate-600 bg-white px-4 py-1.5 rounded-xl border border-slate-200 shadow-sm">2026年10月16日 星期五</div>
+        </div>
+
+        <!-- 巨型翻頁鐘數字區 -->
+        <div class="my-auto py-10">
+          <div class="flex items-center justify-center gap-3 sm:gap-6 select-none">
+            <!-- 時 -->
+            <div class="bg-white border-2 border-indigo-100 rounded-3xl p-6 sm:p-10 shadow-xl transform hover:scale-105 transition">
+              <span id="flipHours" class="digital-display text-7xl sm:text-9xl md:text-[10rem] font-black text-indigo-950">09</span>
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 border-t border-slate-100 pt-1">HOURS</div>
+            </div>
+            <span class="text-5xl sm:text-8xl font-black text-indigo-400 animate-pulse">:</span>
+            <!-- 分 -->
+            <div class="bg-white border-2 border-indigo-100 rounded-3xl p-6 sm:p-10 shadow-xl transform hover:scale-105 transition">
+              <span id="flipMinutes" class="digital-display text-7xl sm:text-9xl md:text-[10rem] font-black text-indigo-950">30</span>
+              <div class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 border-t border-slate-100 pt-1">MINUTES</div>
+            </div>
+            <span class="text-5xl sm:text-8xl font-black text-indigo-400 animate-pulse">:</span>
+            <!-- 秒 -->
+            <div class="bg-white border-2 border-rose-100 rounded-3xl p-6 sm:p-10 shadow-xl transform hover:scale-105 transition">
+              <span id="flipSeconds" class="digital-display text-7xl sm:text-9xl md:text-[10rem] font-black text-rose-500">00</span>
+              <div class="text-[11px] font-bold text-rose-400 uppercase tracking-widest mt-2 border-t border-rose-50 pt-1">SECONDS</div>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400 font-bold tracking-widest mt-6 uppercase flex items-center justify-center gap-2">
+            <i class="fa-solid fa-hourglass-half text-indigo-400"></i> REALTIME FLIP CLOCK ‧ 待機大螢幕投影
+          </div>
+        </div>
+
+        <div class="w-full pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+          <span>💡 建議研習開場前、休息時間切換至此畫面作為主視覺</span>
+          <button onclick="toggleFullScreen()" class="hover:text-indigo-600 transition flex items-center gap-1">
+            <i class="fa-solid fa-expand"></i> 全螢幕呈現
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------ 模組 4: 獨立任務計時器 (倒計時 / 正計時碼表) ------------------ -->
+    <section id="view-timer" class="tab-content hidden space-y-6">
+      <div class="warm-card p-8 sm:p-12 flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[580px] bg-gradient-to-b from-white to-amber-50/20 border-2 border-amber-100 shadow-xl">
+        <div class="w-full flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+            <button onclick="setTimerType('countdown')" id="timerType-cd" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 transition shadow-sm">
+              <i class="fa-solid fa-hourglass-start"></i> 倒數計時
+            </button>
+            <button onclick="setTimerType('stopwatch')" id="timerType-sw" class="px-5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-indigo-600 transition">
+              <i class="fa-solid fa-stopwatch"></i> 正計時碼表
+            </button>
+          </div>
+          <!-- 預設快捷時間與自訂時間輸入 -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div id="quickTimeBtns" class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-slate-400 mr-1">快捷：</span>
+              <button onclick="setQuickMinutes(1)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition">1分</button>
+              <button onclick="setQuickMinutes(3)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition">3分</button>
+              <button onclick="setQuickMinutes(5)" class="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-xs font-bold text-indigo-700 border border-indigo-200 transition">5分</button>
+              <button onclick="setQuickMinutes(10)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition">10分</button>
+              <button onclick="setQuickMinutes(15)" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition">15分</button>
+            </div>
+            <!-- 自訂時間輸入 (分 : 秒) -->
+            <div class="flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-2xl border border-slate-200">
+              <span class="text-xs font-bold text-slate-500">自訂：</span>
+              <input type="number" id="customMinutesInput" min="0" max="999" value="5" class="w-12 px-1.5 py-0.5 rounded-lg border border-slate-300 text-xs text-center font-bold text-slate-800 bg-white outline-none">
+              <span class="text-xs font-bold text-slate-500">分</span>
+              <input type="number" id="customSecondsInput" min="0" max="59" value="0" class="w-10 px-1.5 py-0.5 rounded-lg border border-slate-300 text-xs text-center font-bold text-slate-800 bg-white outline-none">
+              <span class="text-xs font-bold text-slate-500">秒</span>
+              <button onclick="applyCustomTime()" class="px-2.5 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition">
+                設定
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 計時顯示區 -->
+        <div class="my-auto py-8">
+          <div id="timerDisplay" class="digital-display text-8xl sm:text-9xl md:text-[11rem] font-black text-amber-500 tracking-tight transition-all select-none">
+            05:00
+          </div>
+          <!-- 進度條 -->
+          <div class="w-80 sm:w-[480px] bg-slate-100 h-4 rounded-full mx-auto mt-6 overflow-hidden border border-slate-200 shadow-inner">
+            <div id="timerProgressBar" class="bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 h-full w-full transition-all duration-300 rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- 計時器按鈕群 -->
+        <div class="flex items-center gap-4">
+          <button id="toggleTimerBtn" onclick="toggleTimer()" class="px-10 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-lg shadow-lg shadow-amber-200 hover:scale-105 active:scale-95 transition flex items-center gap-3">
+            <i class="fa-solid fa-play" id="timerIcon"></i> <span>開始計時</span>
+          </button>
+          <button onclick="resetTimer()" class="px-8 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-lg border border-slate-200 transition flex items-center gap-2">
+            <i class="fa-solid fa-rotate-left"></i> <span>重設</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------ 模組 5: 排行榜 ------------------ -->
+    <section id="view-leaderboard" class="tab-content hidden space-y-6">
+      <!-- 頂部獎勵說明與兌換專區 -->
+      <div class="warm-card p-6 bg-gradient-to-r from-amber-50 via-orange-50/40 to-yellow-50 border-2 border-amber-200/80 shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center text-2xl shadow-lg shadow-amber-200">
+            <i class="fa-solid fa-gift"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black tracking-widest uppercase">LUCKY DRAW</span>
+              <span class="text-xs font-bold text-amber-800">每滿 5 分可兌換 1 次抽獎機會！</span>
+            </div>
+            <h2 class="text-xl font-black text-slate-800 mt-0.5">課堂抽獎轉盤</h2>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="openLotteryModal()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-black text-sm shadow-lg shadow-amber-200 hover:scale-105 active:scale-95 transition flex items-center gap-2">
+            <i class="fa-solid fa-dice-d20 text-lg"></i>
+            <span>進入抽獎轉盤</span>
+          </button>
+          <button onclick="openRewardEditorModal()" class="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs border border-slate-200 shadow-sm transition flex items-center gap-1.5">
+            <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+            <span>自訂獎勵池 (<span id="rewardCountLabel">10</span>)</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 排行榜雙欄布局：左個人，右分組 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 左欄：個人榜 -->
+        <div class="lg:col-span-6 warm-card p-6 flex flex-col h-[650px] border-slate-200">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
+                <i class="fa-solid fa-user-astronaut"></i>
+              </div>
+              <h3 class="text-base font-black text-slate-800">個人榜</h3>
+            </div>
+            <span class="text-xs text-slate-400 font-bold">加減分同步更新</span>
+          </div>
+
+          <!-- 個人列表 -->
+          <div id="individualLeaderboardList" class="flex-1 overflow-y-auto mt-4 pr-1 space-y-2.5">
+            <!-- 動態生成個人名冊卡片 -->
+          </div>
+        </div>
+
+        <!-- 右欄：分組榜 -->
+        <div class="lg:col-span-6 warm-card p-6 flex flex-col h-[650px] border-slate-200">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
+                <i class="fa-solid fa-crown"></i>
+              </div>
+              <h3 class="text-base font-black text-slate-800">分組榜</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg">小組加分同步計入全組成員</span>
+              <button onclick="resetAllTeamScores()" class="text-xs text-slate-400 hover:text-rose-600 transition">
+                歸零
+              </button>
+            </div>
+          </div>
+
+          <!-- 小組天梯列表 -->
+          <div id="teamLeaderboardList" class="flex-1 overflow-y-auto mt-4 pr-1 space-y-3">
+            <!-- 動態生成小組名冊卡片 -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ------------------ 模組 6: 課堂公佈欄 ------------------ -->
+    <section id="view-bulletin" class="tab-content hidden space-y-6">
+      <div class="warm-card p-6 sm:p-10 flex flex-col justify-between min-h-[720px] relative overflow-hidden border-slate-200">
+        
+        <!-- 頂部操作列：標題 + 快捷按鈕 -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-bullhorn"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-black text-slate-800">公佈欄</h2>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- 例行/歷史公告庫按鈕 -->
+            <button onclick="openRoutineNoticesModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-2 border border-slate-200">
+              <i class="fa-solid fa-box-archive text-indigo-600"></i> 例行 / 歷史公告
+              <span id="noticeCountBadge" class="bg-indigo-600 text-white text-[11px] px-2 py-0.5 rounded-full font-mono">0</span>
+            </button>
+            <!-- 編輯此公告按鈕 -->
+            <button onclick="editCurrentNotice()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 border border-slate-200">
+              <i class="fa-solid fa-pen-to-square text-slate-500"></i> 編輯
+            </button>
+            <!-- 新增公告按鈕 -->
+            <button onclick="openNoticeEditorModal()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-plus"></i> 新增
+            </button>
+          </div>
+        </div>
+
+        <!-- 中間單一焦點看板：超大字號（支援自適應純文字居中 / 左右圖文 QR Code） -->
+        <div id="noticeDisplayWrapper" class="flex-1 flex flex-col justify-center items-center py-6 px-4 sm:px-8 my-auto w-full">
+          <!-- 容器：由 JS 依據是否有 QR Code 動態切換 grid / flex 樣式 -->
+          <div id="noticeInnerContainer" class="w-full flex flex-col justify-center items-center text-center max-w-4xl transition-all">
+            <!-- 文字區塊 -->
+            <div id="noticeTextCol" class="w-full flex flex-col justify-center items-center space-y-6">
+              <h1 id="displayNoticeTitle" class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-snug max-w-4xl">
+                載入中...
+              </h1>
+              <div id="displayNoticeDesc" class="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-700 leading-relaxed sm:leading-loose max-w-2xl whitespace-pre-wrap tracking-wide">
+                ...
+              </div>
+            </div>
+
+            <!-- QR Code 附圖展示區塊（無 QR Code 時隱藏） -->
+            <div id="noticeQrCol" class="hidden flex-col items-center justify-center p-6 bg-slate-50/90 rounded-3xl border border-slate-200/80 shadow-sm shrink-0">
+              <div class="relative group cursor-pointer" onclick="zoomNoticeQr()" title="點擊全螢幕放大 QR Code">
+                <div id="noticeQrCanvas" class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center"></div>
+                <div class="absolute inset-0 bg-slate-900/40 rounded-2xl opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1 backdrop-blur-[2px]">
+                  <i class="fa-solid fa-magnifying-glass-plus text-sm"></i> 放大
+                </div>
+              </div>
+              <div class="mt-3 text-center space-y-1">
+                <div id="noticeQrSubtitle" class="text-xs font-bold text-slate-600 flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-mobile-screen-button text-indigo-600"></i> 手機掃碼立即進入
+                </div>
+                <div id="noticeCheckinCountBadge" class="hidden text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 inline-block">
+                  已報到：<span id="noticeCheckinCount">0</span> 人
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 底部切換與翻頁控制列 -->
+        <div class="flex items-center justify-between pt-6 border-t border-slate-100 mt-auto">
+          <button onclick="prevNotice()" class="px-5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 font-black text-sm border border-slate-200 shadow-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-chevron-left text-indigo-600"></i> 上一則
+          </button>
+
+          <!-- 圓點進度與數字 -->
+          <div class="flex items-center gap-3">
+            <div id="noticeDotsContainer" class="flex items-center gap-2"></div>
+            <span id="noticePageIndicator" class="text-xs font-black text-slate-400 ml-2">1 / 1</span>
+          </div>
+
+          <button onclick="nextNotice()" class="px-5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 font-black text-sm border border-slate-200 shadow-sm transition flex items-center gap-2">
+            下一則 <i class="fa-solid fa-chevron-right text-indigo-600"></i>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= 底部版權宣告與狀態列 ================= -->
+  <footer class="bg-white border-t border-slate-200 px-6 py-4 text-center text-xs text-slate-500 shadow-inner">
+    <div class="max-w-5xl mx-auto space-y-1">
+      <p class="font-medium text-slate-600">
+        屏東縣後庄國小黃朝榮老師作品，免費分享，歡迎擴散推廣，嚴禁商用與任何侵權、不尊重著作權的行為，更多 Puti-AI 教學工具 
+        <a href="https://padlet.com/clongwh/puti_ai_tools" target="_blank" class="text-indigo-600 font-bold underline hover:text-indigo-800">點此前往</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- ================= 各類互動彈窗 (Modals) ================= -->
+
+  <!-- 1. 設定 GAS API 網址 Modal -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-gear text-indigo-600"></i> 設定 GAS 後端部署網址
+        </h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        將您部署好的 Google Apps Script 網頁應用程式 URL（例如：<code class="text-indigo-600 font-mono bg-indigo-50 px-1 py-0.5 rounded">https://script.google.com/macros/s/.../exec</code>）貼在下方，QR Code 與同步按鈕將自動切換為該連結。
+      </p>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1">GAS Web App 網址：</label>
+        <input type="url" id="configGasUrl" placeholder="https://script.google.com/macros/s/.../exec"
+          class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none">
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeConfigModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold hover:bg-slate-200">取消</button>
+        <button onclick="saveGasConfig()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200">儲存並重新生成 QR Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 手動新增教師 Modal -->
+  <div id="manualAddModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-base font-black text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-indigo-600"></i> 手動新增研習老師
+        </h3>
+        <button onclick="closeManualAddModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">服務學校：</label>
+          <input type="text" id="manualSchool" placeholder="例如：花蓮縣明義國小" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-800 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">教師姓名：</label>
+          <input type="text" id="manualName" placeholder="例如：林老師" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-800 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">教學痛點或困擾（選填）：</label>
+          <input type="text" id="manualPain" placeholder="例如：閱讀理解策略引導不易" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 text-xs text-slate-800 outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeManualAddModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
+        <button onclick="confirmManualAdd()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">加入名冊</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 詳細教師心聲檢視 Modal -->
+  <div id="detailModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <h3 id="modalTeacherName" class="text-xl font-black text-slate-800">老師姓名</h3>
+          <p id="modalTeacherSchool" class="text-xs text-indigo-600 font-bold mt-0.5">服務學校 ‧ 年資</p>
+        </div>
+        <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div class="space-y-3.5 text-xs">
+        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-4">
+          <div class="text-amber-800 font-bold flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-circle-exclamation text-amber-600"></i> 目前教學痛點或困擾：
+          </div>
+          <p id="modalTeacherPain" class="text-slate-700 leading-relaxed whitespace-pre-wrap"></p>
+        </div>
+        <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4">
+          <div class="text-indigo-900 font-bold flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-wand-magic-sparkles text-indigo-600"></i> 最想用 AI 解決的問題：
+          </div>
+          <p id="modalTeacherGoal" class="text-slate-700 leading-relaxed whitespace-pre-wrap"></p>
+        </div>
+        <div class="bg-rose-50/70 border border-rose-200 rounded-2xl p-4">
+          <div class="text-rose-900 font-bold flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-shield-halved text-rose-600"></i> 對於 AI 教學的擔憂：
+          </div>
+          <p id="modalTeacherConcern" class="text-slate-700 leading-relaxed whitespace-pre-wrap"></p>
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeDetailModal()" class="px-5 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200">關閉視窗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 新增公告 Modal -->
+  <!-- 4. 例行 / 歷史公告庫 Modal -->
+  <div id="routineNoticesModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-slate-200 shadow-2xl flex flex-col max-h-[85vh] space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
+            <i class="fa-solid fa-box-archive"></i>
+          </div>
+          <h3 class="text-base font-black text-slate-800">例行 / 歷史公告庫</h3>
+        </div>
+        <button onclick="closeRoutineNoticesModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p class="text-xs text-slate-500">
+        點擊即可快速將公告切換投放到大螢幕，或隨時重複編輯與重用：
+      </p>
+
+      <!-- 公告列表容器 -->
+      <div id="routineNoticesList" class="flex-1 overflow-y-auto space-y-3 pr-1">
+        <!-- 動態生成各項歷史與例行公告卡片 -->
+      </div>
+
+      <!-- 底部操作按鈕 -->
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100">
+        <button onclick="restoreDefaultRoutineNotices()" class="text-xs text-slate-400 hover:text-indigo-600 underline">
+          恢復通用例行公告
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeRoutineNoticesModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">關閉</button>
+          <button onclick="openNoticeEditorModal()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200">
+            <i class="fa-solid fa-plus mr-1"></i> 新增公告
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4-1. 公告編輯 / 新增 Modal -->
+  <div id="noticeEditorModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="noticeEditorModalTitle" class="text-base font-black text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-indigo-600"></i> 編輯公告
+        </h3>
+        <button onclick="closeNoticeEditorModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">公告標題：</label>
+          <input type="text" id="noticeTitleInput" placeholder="例如：專注實作與演練" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-slate-700">說明文字：</label>
+            <span class="text-[11px] text-slate-400 font-medium">建議按 Enter 分成 2~3 行，大螢幕更好閱讀</span>
+          </div>
+          <textarea id="noticeDescInput" rows="5" placeholder="請依照指引完成任務&#10;遇到任何疑問歡迎隨時舉手或向鄰座夥伴交流" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-300 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 resize-none leading-relaxed"></textarea>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-slate-700">附加大螢幕 QR Code（選填）：</label>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="fillCheckinUrlToNotice()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold underline flex items-center gap-1">
+                <i class="fa-solid fa-qrcode text-[10px]"></i> 一鍵帶入報到網址
+              </button>
+              <button type="button" onclick="clearNoticeQrUrl()" class="text-[11px] text-slate-400 hover:text-rose-600 underline">
+                清空
+              </button>
+            </div>
+          </div>
+          <input type="text" id="noticeQrUrlInput" placeholder="留空則純文字居中；可填任何自訂網址或點擊上方帶入報到網址" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeNoticeEditorModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
+        <button onclick="saveNotice()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200">儲存公告</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 課堂抽獎轉盤 Modal (每滿5分抽換獎勵) -->
+  <div id="lotteryModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-xl w-full border-2 border-amber-200 shadow-2xl text-center space-y-6 relative overflow-hidden">
+      <!-- 頂部標題與關閉按鈕 -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-black">
+            <i class="fa-solid fa-gift"></i>
+          </span>
+          <h3 class="text-lg font-black text-slate-800">課堂抽獎轉盤</h3>
+        </div>
+        <button onclick="closeLotteryModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <!-- 兌換對象選擇：選擇是個人還是小組消耗 5 分 -->
+      <div class="bg-amber-50/60 p-3 rounded-2xl border border-amber-200 text-xs flex flex-wrap items-center justify-between gap-2">
+        <span class="font-bold text-amber-900">兌換對象（消耗 5 分）：</span>
+        <select id="lotteryTargetSelect" class="bg-white border border-amber-300 rounded-xl px-3 py-1 font-bold text-slate-800 outline-none text-xs">
+          <!-- 動態填充滿 5 分的個人或小組 -->
+        </select>
+      </div>
+
+      <!-- 抽獎跳動大獎卡 -->
+      <div class="py-10 px-6 rounded-3xl bg-gradient-to-b from-amber-50/40 via-white to-amber-50/60 border-2 border-dashed border-amber-300 relative shadow-inner">
+        <div class="text-[11px] font-black tracking-widest text-amber-600 uppercase mb-2" id="lotteryStatusText">READY TO DRAW</div>
+        <div id="lotteryPrizeDisplay" class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight transition-all min-h-[70px] flex items-center justify-center px-4 leading-snug">
+          點擊下方開始抽取獎品！
+        </div>
+        <div id="lotterySubtitleDisplay" class="text-xs text-slate-500 font-medium mt-2 min-h-[20px]">
+          滿 5 分即可兌換隨機獎項！
+        </div>
+      </div>
+
+      <!-- 抽獎按鈕群 -->
+      <div class="flex items-center justify-center gap-4 pt-2">
+        <button id="startLotteryBtn" onclick="toggleLotteryRoll()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-black text-base shadow-lg shadow-amber-200 hover:scale-105 active:scale-95 transition flex items-center gap-2">
+          <i class="fa-solid fa-dice-d20"></i>
+          <span>開始隨機抽獎</span>
+        </button>
+        <button onclick="closeLotteryModal()" class="px-5 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+          完成領獎
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 編輯獎品池 Modal -->
+  <div id="rewardEditorModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-slate-200 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+          <h3 class="text-base font-black text-slate-800">自訂獎勵清單 (每行一個獎項)</h3>
+        </div>
+        <button onclick="closeRewardEditorModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        您可以自由增刪或修改獎品項目，每行代表一個隨機抽獎項目：
+      </p>
+      <div>
+        <textarea id="rewardListTextarea" rows="11" class="w-full p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-800 font-medium leading-relaxed outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-mono"></textarea>
+      </div>
+      <div class="flex items-center justify-between pt-2">
+        <button onclick="resetDefaultRewards()" class="text-xs text-slate-400 hover:text-indigo-600 underline">
+          恢復預設獎勵
+        </button>
+        <div class="flex gap-2">
+          <button onclick="closeRewardEditorModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">取消</button>
+          <button onclick="saveCustomRewards()" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200">儲存獎品池</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. QR Code 全螢幕放大 Modal -->
+  <div id="qrZoomModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4" onclick="closeQrZoomModal()">
+    <div class="bg-white rounded-3xl p-8 max-w-md w-full border border-slate-200 shadow-2xl flex flex-col items-center text-center space-y-4" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between w-full pb-2 border-b border-slate-100">
+        <h3 id="qrZoomTitle" class="text-base font-black text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-qrcode text-indigo-600"></i> 手機掃碼
+        </h3>
+        <button onclick="closeQrZoomModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="qrZoomCanvas" class="bg-white p-4 rounded-2xl border border-slate-200 shadow-md flex items-center justify-center"></div>
+      <p class="text-xs text-slate-500 font-bold">大尺寸清晰碼，方便教室各角落掃描</p>
+    </div>
+  </div>
+
+  <!-- ================= JavaScript 核心邏輯 ================= -->
+  <script>
+    // ---------------- 全域狀態變數 ----------------
+    let checkinList = [];
+    let pickedHistory = [];
+    let pickMode = 1;
+    let isRolling = false;
+    let rollTimer = null;
+    let lastPickedTeachers = [];
+
+    // 隊伍資料 (預設無自訂別名，僅為簡潔序號，點擊即可原地自訂修改)
+    let teams = [
+      { id: 1, name: '第 1 組', score: 0, members: [] },
+      { id: 2, name: '第 2 組', score: 0, members: [] },
+      { id: 3, name: '第 3 組', score: 0, members: [] },
+      { id: 4, name: '第 4 組', score: 0, members: [] }
+    ];
+
+    // 計時器狀態
+    let timerMode = 'countdown'; // 'countdown' or 'stopwatch'
+    let timerDuration = 300; // 預設 5 分鐘
+    let timerRemaining = 300;
+    let stopwatchSeconds = 0;
+    let timerInterval = null;
+    let isTimerRunning = false;
+
+    // 公告項目狀態（通用例行庫與當前展示）
+    const DEFAULT_NOTICES = [
+      {
+        id: 1,
+        title: '歡迎蒞臨課堂！',
+        desc: '請掃描大螢幕 QR Code 完成報到並就座\n準備開始今日精彩課程',
+        qrUrl: 'CHECKIN'
+      },
+      {
+        id: 2,
+        title: '小組深度對話時間',
+        desc: '請各組夥伴展開熱烈討論、凝聚團隊共識\n並推派一位代表準備發表',
+        qrUrl: ''
+      },
+      {
+        id: 3,
+        title: '專注實作與演練',
+        desc: '請依照指引完成任務\n遇到任何疑問歡迎隨時舉手或向鄰座夥伴交流',
+        qrUrl: ''
+      },
+      {
+        id: 4,
+        title: '中場休息 10 分鐘',
+        desc: '請老師們起身活動、補充水分與放鬆\n稍後準時展開下半場！',
+        qrUrl: ''
+      },
+      {
+        id: 5,
+        title: '各組成果精采發表',
+        desc: '請各組夥伴依序上台分享實作結晶\n全場給予熱情回饋與掌聲！',
+        qrUrl: ''
+      }
+    ];
+
+    // 自動相容與升級至最新排版（第一則帶報到 QR Code）
+    let savedNotices = JSON.parse(localStorage.getItem('puti_bulletin_notices'));
+    if (!savedNotices || !Array.isArray(savedNotices) || !savedNotices[0] || savedNotices[0].qrUrl === undefined) {
+      savedNotices = JSON.parse(JSON.stringify(DEFAULT_NOTICES));
+      localStorage.setItem('puti_bulletin_notices', JSON.stringify(savedNotices));
+    }
+    let notices = savedNotices;
+    let currentNoticeIndex = parseInt(localStorage.getItem('puti_bulletin_current_index')) || 0;
+    let editingNoticeId = null;
+    let currentActiveQrUrl = '';
+
+    // 字體大小控制狀態
+    let currentFontSize = parseInt(localStorage.getItem('puti_font_size')) || 18;
+
+    function applyFontSize(size) {
+      currentFontSize = Math.min(Math.max(size, 14), 32); // 限制在 14px ~ 32px 之間
+      document.documentElement.style.setProperty('--base-font-size', `${currentFontSize}px`);
+      const label = document.getElementById('currentFontSizeLabel');
+      if (label) label.innerText = `${currentFontSize}px`;
+      localStorage.setItem('puti_font_size', currentFontSize);
+    }
+
+    function adjustFontSize(delta) {
+      applyFontSize(currentFontSize + delta);
+    }
+
+    // ---------------- 初始化流程 ----------------
+    window.addEventListener('DOMContentLoaded', () => {
+      applyFontSize(currentFontSize);
+      loadSavedConfig();
+      renderCheckinList();
+      renderTeams();
+      renderBulletins();
+      startFlipClock();
+      updateTimerDisplay();
+      renderLeaderboard();
+
+      // 預設進入全屏大翻頁時鐘
+      switchTab('clock', false);
+
+      if (checkinList.length === 0) {
+        loadSampleData();
+      }
+
+      // 支援左右方向鍵或簡報筆切換公佈欄
+      window.addEventListener('keydown', (e) => {
+        const bulletinView = document.getElementById('view-bulletin');
+        const hasOpenModal = document.querySelector('.fixed:not(.hidden)');
+        if (bulletinView && !bulletinView.classList.contains('hidden') && !hasOpenModal) {
+          if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevNotice();
+          if (e.key === 'ArrowRight' || e.key === 'PageDown') nextNotice();
+        }
+      });
+    });
+
+    // ---------------- 標籤頁面切換 ----------------
+    function switchTab(tabId, playAudio = true) {
+      if (playAudio) playSound('click');
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-indigo-700', 'bg-white', 'shadow-sm', 'border', 'border-slate-200/60');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeView = document.getElementById(`view-${tabId}`);
+      const activeBtn = document.getElementById(`tabBtn-${tabId}`);
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-600');
+        activeBtn.classList.add('text-indigo-700', 'bg-white', 'shadow-sm', 'border', 'border-slate-200/60');
+      }
+
+      // 當切換到排行榜時即時重新渲染
+      if (tabId === 'leaderboard') {
+        renderLeaderboard();
+      }
+    }
+
+    // ---------------- QR Code 與 GAS 設定 ----------------
+    function loadSavedConfig() {
+      const savedGas = localStorage.getItem('puti_gas_url') || 'https://script.google.com/macros/s/AKfycbxYOUR_DEPLOYMENT_ID/exec';
+      document.getElementById('configGasUrl').value = savedGas;
+      updateQRCode(savedGas);
+    }
+
+    function saveGasConfig() {
+      const url = document.getElementById('configGasUrl').value.trim();
+      if (!url) {
+        alert('請輸入有效網址！');
+        return;
+      }
+      localStorage.setItem('puti_gas_url', url);
+      updateQRCode(url);
+      closeConfigModal();
+    }
+
+    function updateQRCode(url) {
+      const container = document.getElementById('qrcodeCanvas');
+      container.innerHTML = '';
+      new QRCode(container, {
+        text: url,
+        width: 184,
+        height: 184,
+        colorDark: "#1E1B4B",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+      document.getElementById('displayCheckinUrl').innerText = url;
+    }
+
+    function copyCheckinUrl() {
+      const url = document.getElementById('displayCheckinUrl').innerText;
+      navigator.clipboard.writeText(url).then(() => {
+        alert('已複製報到網址到剪貼簿！');
+      });
+    }
+
+    // ---------------- 報到名冊模組 ----------------
+    function renderCheckinList() {
+      const container = document.getElementById('checkinListContainer');
+      document.getElementById('checkinBadge').innerText = checkinList.length;
+      document.getElementById('statCheckinCount').innerText = checkinList.length;
+      const noticeCountSpan = document.getElementById('noticeCheckinCount');
+      if (noticeCountSpan) noticeCountSpan.innerText = checkinList.length;
+      
+      const schools = new Set(checkinList.map(c => c.school));
+      document.getElementById('statSchoolCount').innerText = schools.size;
+
+      if (checkinList.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-20 text-slate-400">
+            <i class="fa-solid fa-users text-4xl mb-3 text-slate-300"></i>
+            <p>目前尚無報到名單。請掃描左方 QR Code 報到或點選「載入模擬學員」。</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = checkinList.map((t, idx) => `
+        <div onclick="openDetailModal(${idx})" class="bg-white hover:bg-slate-50 border border-slate-200/80 p-4 rounded-2xl transition cursor-pointer flex items-center justify-between gap-4 shadow-sm hover:shadow-md group">
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-sm">
+              ${t.name.slice(0, 1)}
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-black text-slate-800 group-hover:text-indigo-600 transition">${t.name}</span>
+                <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-100">${t.school}</span>
+                <span class="text-[10px] text-slate-500 font-medium">${t.years || ''}</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1 line-clamp-1">
+                <span class="text-amber-600 font-bold">痛點：</span>${t.painPoints || '無特別痛點'}
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-400">${t.time ? t.time.slice(11, 16) : ''}</span>
+            <i class="fa-solid fa-chevron-right text-xs text-slate-300 group-hover:text-indigo-600 transition transform group-hover:translate-x-1"></i>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 載入花蓮在地模擬教師資料（展示用）
+    function loadSampleData() {
+      checkinList = [
+        {
+          id: 1,
+          time: '2026-10-17 08:35:12',
+          school: '花蓮縣北濱國小',
+          name: '陳雅婷老師',
+          years: '4~10年（穩健中生代）',
+          painPoints: '低成就學生對生字造句缺乏想像力，容易呆坐發呆。',
+          aiGoal: '希望能用 AI 快速生成配合花蓮在地海景的情境造句練習。',
+          aiConcern: '擔心學生直接照抄 AI 答案，自己不願思考。'
+        },
+        {
+          id: 2,
+          time: '2026-10-17 08:38:45',
+          school: '花蓮縣明義國小',
+          name: '林志豪老師',
+          years: '11~20年（資深骨幹）',
+          painPoints: '課文深究與提問設計耗時，每週備課時間被壓縮得很緊。',
+          aiGoal: '快速架構符合 Bloom 六大認知層次的階梯提問單。',
+          aiConcern: 'AI 產生的題目有時候太深奧或與課文段落對不上。'
+        },
+        {
+          id: 3,
+          time: '2026-10-17 08:42:01',
+          school: '花蓮縣中原國小',
+          name: '張慧雯老師',
+          years: '1~3年（熱血新手）',
+          painPoints: '小組討論時常常只有組長一個人在講話，其他人滑水。',
+          aiGoal: '學習 Padlet Sandbox 角色卡分工與互動機制。',
+          aiConcern: '平板設備管理混亂，課堂容易失控。'
+        },
+        {
+          id: 4,
+          time: '2026-10-17 08:45:19',
+          school: '花蓮縣忠孝國小',
+          name: '王宗翰老師',
+          years: '4~10年（穩健中生代）',
+          painPoints: '學生寫作內容平淡，缺乏情緒同理與感官描寫。',
+          aiGoal: '結合《松鼠先生的麵包》探討 SEL 情緒轉折與寫作。',
+          aiConcern: '生圖工具要付費或操作繁瑣。'
+        },
+        {
+          id: 5,
+          time: '2026-10-17 08:48:30',
+          school: '花蓮縣吉安國小',
+          name: '黃怡君老師',
+          years: '21年以上（大師專家）',
+          painPoints: '傳統紙本學習單批改繁重，無法當場給予即時回饋。',
+          aiGoal: '了解二星一願同儕互評數位化實施方式。',
+          aiConcern: '軟體介面更新太快，容易忘記步驟。'
+        },
+        {
+          id: 6,
+          time: '2026-10-17 08:51:02',
+          school: '花蓮縣鑄強國小',
+          name: '李俊毅老師',
+          years: '4~10年（穩健中生代）',
+          painPoints: '課堂缺乏破冰亮點，上午第一節學員精神不濟。',
+          aiGoal: '學習朝榮老師的 Kahoot 破冰與高互動經營心法。',
+          aiConcern: '網路速度斷線時的應變機制。'
+        },
+        {
+          id: 7,
+          time: '2026-10-17 08:53:14',
+          school: '花蓮縣海星國小',
+          name: '許芳瑜老師',
+          years: '1~3年（熱血新手）',
+          painPoints: '想做精美教材但美術排版能力有限，排版花很多時間。',
+          aiGoal: 'Padlet 範本直接套用與美感版面速成。',
+          aiConcern: '沒有特別擔憂，期待今天收穫滿滿！'
+        },
+        {
+          id: 8,
+          time: '2026-10-17 08:55:50',
+          school: '花蓮縣太昌國小',
+          name: '郭書豪老師',
+          years: '11~20年（資深骨幹）',
+          painPoints: '國語文輔導團訪視時需要示範數位公開課的教學亮點。',
+          aiGoal: '將 NotebookLM 語音工作室與心智圖帶入共學。',
+          aiConcern: 'AI 工具是否具備長遠穩定性。'
+        }
+      ];
+      renderCheckinList();
+      generateTeams();
+      renderLeaderboard();
+    }
+
+    function clearAllCheckins() {
+      if (confirm('確定要清空目前所有報到名單嗎？')) {
+        checkinList = [];
+        pickedHistory = [];
+        renderCheckinList();
+        renderHistoryList();
+        generateTeams();
+      }
+    }
+
+    // 透過 GAS API 同步名冊
+    function syncFromGAS() {
+      const url = localStorage.getItem('puti_gas_url');
+      if (!url || url.includes('YOUR_DEPLOYMENT_ID')) {
+        alert('請先在右上角「設定」填入真實的 GAS Web App URL 才能同步！');
+        openConfigModal();
+        return;
+      }
+
+      const syncIcon = document.getElementById('syncIcon');
+      syncIcon.classList.add('fa-spin');
+
+      fetch(`${url}?action=getCheckins`)
+        .then(res => res.json())
+        .then(data => {
+          syncIcon.classList.remove('fa-spin');
+          if (Array.isArray(data)) {
+            checkinList = data;
+            renderCheckinList();
+            generateTeams();
+            alert(`同步完成！共取得 ${data.length} 位研習老師名單。`);
+          } else {
+            alert('回傳格式異常：' + JSON.stringify(data));
+          }
+        })
+        .catch(err => {
+          syncIcon.classList.remove('fa-spin');
+          alert('同步連線失敗，請確認 GAS 部署是否設定為「任何人皆可存取」：' + err);
+        });
+    }
+
+    // ---------------- 隨機點名模組 ----------------
+    function setPickMode(count) {
+      pickMode = count;
+      [1, 2, 4].forEach(c => {
+        const btn = document.getElementById(`pickMode-${c}`);
+        if (c === count) {
+          btn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+          btn.classList.remove('text-slate-600');
+        } else {
+          btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+          btn.classList.add('text-slate-600');
+        }
+      });
+    }
+
+    function togglePickRolling() {
+      if (checkinList.length === 0) {
+        alert('目前名冊中沒有老師，請先報到或載入名冊！');
+        return;
+      }
+
+      const startBtn = document.getElementById('startPickBtn');
+      const giveBtn = document.getElementById('givePointBtn');
+
+      if (isRolling) {
+        // 停止滾動
+        clearInterval(rollTimer);
+        isRolling = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>再抽一次</span>';
+        startBtn.classList.remove('from-rose-500', 'to-red-600');
+        startBtn.classList.add('from-indigo-600', 'to-indigo-700');
+        document.getElementById('pickStatusText').innerText = 'SELECTED! 恭喜中籤！';
+
+        // 觸發勝利彩帶特效與音效
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        playSound('win');
+
+        // 加入歷史紀錄
+        lastPickedTeachers.forEach(t => {
+          if (!pickedHistory.find(h => h.name === t.name && h.school === t.school)) {
+            pickedHistory.unshift({ ...t, time: new Date().toLocaleTimeString() });
+          }
+        });
+        renderHistoryList();
+        giveBtn.classList.remove('hidden');
+
+      } else {
+        // 開始滾動
+        let candidatePool = [...checkinList];
+        const excludePicked = document.getElementById('excludePickedCheckbox').checked;
+
+        if (excludePicked) {
+          const pickedNames = new Set(pickedHistory.map(h => h.name));
+          candidatePool = candidatePool.filter(t => !pickedNames.has(t.name));
+          if (candidatePool.length < pickMode) {
+            alert('未被抽中的人數已不足，即將自動重設不重複名單！');
+            pickedHistory = [];
+            renderHistoryList();
+            candidatePool = [...checkinList];
+          }
+        }
+
+        isRolling = true;
+        giveBtn.classList.add('hidden');
+        startBtn.innerHTML = '<i class="fa-solid fa-stop"></i> <span>鎖定幸運兒</span>';
+        startBtn.classList.remove('from-indigo-600', 'to-indigo-700');
+        startBtn.classList.add('from-rose-500', 'to-red-600');
+        document.getElementById('pickStatusText').innerText = 'ROLLING... 命運轉動中';
+        playSound('click');
+
+        rollTimer = setInterval(() => {
+          playSound('tick');
+          const shuffled = [...candidatePool].sort(() => 0.5 - Math.random());
+          lastPickedTeachers = shuffled.slice(0, pickMode);
+
+          const nameDisplay = document.getElementById('pickedNameDisplay');
+          const schoolDisplay = document.getElementById('pickedSchoolDisplay');
+
+          nameDisplay.innerHTML = lastPickedTeachers.map(t => `
+            <span class="inline-block px-5 py-2 rounded-2xl bg-indigo-50 text-indigo-900 border-2 border-indigo-200 animate-pulse font-black shadow-sm">
+              ${t.name}
+            </span>
+          `).join(' ');
+
+          schoolDisplay.innerText = lastPickedTeachers.map(t => `${t.school}`).join(' ‧ ');
+        }, 80);
+      }
+    }
+
+    function giveBonusPointToPicked() {
+      if (lastPickedTeachers.length === 0) return;
+      let awardedTeams = [];
+      lastPickedTeachers.forEach(teacher => {
+        teams.forEach(team => {
+          if (team.members.some(m => m.name === teacher.name)) {
+            team.score += 1;
+            awardedTeams.push(team.name);
+          }
+        });
+      });
+      renderTeams();
+      confetti({ particleCount: 50, spread: 50 });
+      playSound('scoreUp');
+      alert(`已為中籤老師所屬小組各 +1 分！`);
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('pickedHistoryList');
+      if (pickedHistory.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-10">尚無被抽中的老師</div>`;
+        return;
+      }
+      container.innerHTML = pickedHistory.map((h, i) => `
+        <div class="bg-white border border-slate-200 p-2.5 rounded-xl flex items-center justify-between text-xs shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-md bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-[10px]">
+              ${i + 1}
+            </span>
+            <span class="font-bold text-slate-800">${h.name}</span>
+            <span class="text-[10px] text-slate-500">${h.school}</span>
+          </div>
+          <span class="text-[10px] text-slate-400">${h.time}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearPickedHistory() {
+      pickedHistory = [];
+      renderHistoryList();
+      playSound('click');
+    }
+
+    // ---------------- 智能分組 & 分組計分 ----------------
+    function generateTeams() {
+      const count = parseInt(document.getElementById('teamCountSelect').value, 10);
+      const newTeams = [];
+      for (let i = 0; i < count; i++) {
+        const existing = teams[i];
+        newTeams.push({
+          id: i + 1,
+          name: existing && existing.name ? existing.name : `第 ${i + 1} 組`,
+          score: existing ? existing.score : 0,
+          members: []
+        });
+      }
+
+      const shuffled = [...checkinList].sort(() => 0.5 - Math.random());
+      shuffled.forEach((teacher, idx) => {
+        newTeams[idx % count].members.push(teacher);
+      });
+
+      teams = newTeams;
+      renderTeams();
+      playSound('click');
+    }
+
+    function renderTeams() {
+      const container = document.getElementById('teamsContainer');
+      container.innerHTML = teams.map(t => `
+        <div class="warm-card p-6 flex flex-col justify-between hover:border-indigo-300 transition group/card">
+          <div>
+            <!-- 小組標題（可原地編輯自訂） -->
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 gap-2">
+              <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                <h4 id="teamNameText-${t.id}" class="font-black text-base text-slate-800 truncate" title="點擊修改組名">${t.name}</h4>
+                <button onclick="editTeamName(${t.id})" title="自訂組別名稱" class="text-slate-400 hover:text-indigo-600 transition p-1 rounded-md text-xs">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              </div>
+              <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold shrink-0">${t.members.length} 人</span>
+            </div>
+
+            <!-- 分數大字 -->
+            <div class="my-4 text-center">
+              <div class="text-5xl font-black text-amber-500 digital-display">${t.score}</div>
+              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">TOTAL POINTS</div>
+            </div>
+
+            <!-- 成員名單 -->
+            <div class="space-y-1.5 my-3 max-h-36 overflow-y-auto pr-1">
+              ${t.members.length > 0 ? t.members.map(m => `
+                <div class="text-xs py-1.5 px-3 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-between">
+                  <span class="font-bold text-slate-700">${m.name}</span>
+                  <span class="text-[10px] text-slate-500 truncate max-w-[95px]">${m.school}</span>
+                </div>
+              `).join('') : '<div class="text-xs text-slate-400 text-center py-4">尚無分配成員</div>'}
+            </div>
+          </div>
+
+          <!-- 加扣分控制 -->
+          <div class="grid grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+            <button onclick="changeTeamScore(${t.id}, -1)" class="py-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition flex items-center justify-center gap-1 border border-slate-200">
+              <i class="fa-solid fa-minus"></i> 扣 1 分
+            </button>
+            <button onclick="changeTeamScore(${t.id}, 1)" class="py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white text-xs font-bold transition flex items-center justify-center gap-1 border border-indigo-200 shadow-sm">
+              <i class="fa-solid fa-plus"></i> 加 1 分
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function editTeamName(teamId) {
+      const team = teams.find(t => t.id === teamId);
+      if (!team) return;
+      const newName = prompt(`請輸入「${team.name}」的新名稱：`, team.name);
+      if (newName !== null && newName.trim() !== '') {
+        team.name = newName.trim();
+        renderTeams();
+        playSound('click');
+      }
+    }
+
+    function changeTeamScore(teamId, delta) {
+      const team = teams.find(t => t.id === teamId);
+      if (team) {
+        team.score = Math.max(0, team.score + delta);
+
+        // 分組積分同步加到全組個人身上
+        if (team.members && team.members.length > 0) {
+          team.members.forEach(member => {
+            const person = checkinList.find(p => p.id === member.id || (p.name === member.name && p.school === member.school));
+            if (person) {
+              person.score = Math.max(0, (person.score || 0) + delta);
+              member.score = person.score;
+            }
+          });
+        }
+
+        renderTeams();
+        renderLeaderboard();
+
+        if (delta > 0) {
+          confetti({ particleCount: 30, spread: 45 });
+          playSound('scoreUp');
+        } else {
+          playSound('scoreDown');
+        }
+      }
+    }
+
+    function resetAllTeamScores() {
+      if (confirm('確定要將所有小組分數歸零嗎？')) {
+        teams.forEach(t => t.score = 0);
+        renderTeams();
+        playSound('click');
+      }
+    }
+
+    // ---------------- 翻頁時鐘 (Flip Clock) ----------------
+    function startFlipClock() {
+      function update() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+
+        document.getElementById('flipHours').innerText = hours;
+        document.getElementById('flipMinutes').innerText = minutes;
+        document.getElementById('flipSeconds').innerText = seconds;
+
+        const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        document.getElementById('clockDateDisplay').innerText = 
+          `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${days[now.getDay()]}`;
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    // ---------------- 課堂計時器與倒計時 ----------------
+    function setTimerType(type) {
+      timerMode = type;
+      pauseTimer();
+      const cdBtn = document.getElementById('timerType-cd');
+      const swBtn = document.getElementById('timerType-sw');
+      const quickBtns = document.getElementById('quickTimeBtns');
+
+      if (type === 'countdown') {
+        cdBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+        cdBtn.classList.remove('text-slate-600');
+        swBtn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+        swBtn.classList.add('text-slate-600');
+        quickBtns.classList.remove('hidden');
+        timerRemaining = timerDuration;
+      } else {
+        swBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+        swBtn.classList.remove('text-slate-600');
+        cdBtn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+        cdBtn.classList.add('text-slate-600');
+        quickBtns.classList.add('hidden');
+        stopwatchSeconds = 0;
+      }
+      updateTimerDisplay();
+    }
+
+    function setQuickMinutes(m) {
+      pauseTimer();
+      timerDuration = m * 60;
+      timerRemaining = timerDuration;
+      document.getElementById('customMinutesInput').value = m;
+      document.getElementById('customSecondsInput').value = 0;
+      updateTimerDisplay();
+      playSound('click');
+    }
+
+    function applyCustomTime() {
+      pauseTimer();
+      const mins = parseInt(document.getElementById('customMinutesInput').value, 10) || 0;
+      const secs = parseInt(document.getElementById('customSecondsInput').value, 10) || 0;
+      const total = mins * 60 + secs;
+
+      if (total <= 0) {
+        alert('請輸入大於 0 秒的時間！');
+        return;
+      }
+
+      if (timerMode === 'countdown') {
+        timerDuration = total;
+        timerRemaining = total;
+      } else {
+        // 正計時碼表：從自訂時間開始往上數
+        stopwatchSeconds = total;
+      }
+
+      updateTimerDisplay();
+      playSound('click');
+    }
+
+    function toggleTimer() {
+      if (isTimerRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      isTimerRunning = true;
+      playSound('click');
+      const btn = document.getElementById('toggleTimerBtn');
+      btn.innerHTML = '<i class="fa-solid fa-pause"></i> <span>暫停計時</span>';
+      btn.classList.remove('from-amber-500', 'to-orange-500');
+      btn.classList.add('from-rose-500', 'to-red-600');
+
+      timerInterval = setInterval(() => {
+        if (timerMode === 'countdown') {
+          if (timerRemaining > 0) {
+            timerRemaining--;
+            updateTimerDisplay();
+            // 最後 5 秒每秒發出提示音
+            if (timerRemaining <= 5 && timerRemaining > 0) {
+              playSound('tick');
+            }
+          } else {
+            pauseTimer();
+            confetti({ particleCount: 150, spread: 90 });
+            playBeepSound();
+            alert('⏰ 時間到！請各組夥伴停下動作，準備進行發表與分享！');
+          }
+        } else {
+          stopwatchSeconds++;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      isTimerRunning = false;
+      clearInterval(timerInterval);
+      playSound('click');
+      const btn = document.getElementById('toggleTimerBtn');
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>繼續計時</span>';
+      btn.classList.remove('from-rose-500', 'to-red-600');
+      btn.classList.add('from-amber-500', 'to-orange-500');
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      playSound('click');
+      if (timerMode === 'countdown') {
+        timerRemaining = timerDuration;
+      } else {
+        stopwatchSeconds = 0;
+      }
+      const btn = document.getElementById('toggleTimerBtn');
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>開始計時</span>';
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById('timerDisplay');
+      const progressBar = document.getElementById('timerProgressBar');
+
+      let sec = (timerMode === 'countdown') ? timerRemaining : stopwatchSeconds;
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      display.innerText = `${m}:${s}`;
+
+      if (timerMode === 'countdown') {
+        const pct = (timerRemaining / timerDuration) * 100;
+        progressBar.style.width = `${pct}%`;
+        if (pct <= 20) {
+          display.classList.add('text-rose-600', 'animate-pulse');
+          display.classList.remove('text-amber-500');
+        } else {
+          display.classList.remove('text-rose-600', 'animate-pulse');
+          display.classList.add('text-amber-500');
+        }
+      } else {
+        progressBar.style.width = '100%';
+      }
+    }
+
+    // ---------------- 課堂音效合成引擎 (Web Audio API) ----------------
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playSound(type) {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+
+        if (type === 'click') {
+          // 清脆按鈕點擊聲
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+          osc.start(now);
+          osc.stop(now + 0.05);
+        } else if (type === 'tick') {
+          // 抽籤滾動滴答聲 / 倒數倒數聲
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === 'scoreUp') {
+          // 加分音效：悅耳兩段高音 (Do-Mi-Sol)
+          [523.25, 659.25, 783.99].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.15);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.16);
+          });
+        } else if (type === 'scoreDown') {
+          // 扣分音效：下行低音
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.exponentialRampToValueAtTime(160, now + 0.2);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (type === 'win') {
+          // 中獎 / 勝利音效 (歡慶大三和弦琶音)
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+            gain.gain.setValueAtTime(0.25, now + idx * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.35);
+            osc.start(now + idx * 0.1);
+            osc.stop(now + idx * 0.1 + 0.36);
+          });
+        } else if (type === 'alarm') {
+          // 時間到警報音效 (連續兩聲提醒鈴)
+          [880, 880, 1174.66].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.2);
+            gain.gain.setValueAtTime(0.2, now + idx * 0.2);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.2 + 0.18);
+            osc.start(now + idx * 0.2);
+            osc.stop(now + idx * 0.2 + 0.19);
+          });
+        }
+      } catch (e) {}
+    }
+
+    function playBeepSound() {
+      playSound('alarm');
+    }
+
+    // ---------------- 課堂公佈欄 (單一超大字展示 + 自適應 QR Code + 例行/歷史庫) ----------------
+    function saveNoticesToStorage() {
+      localStorage.setItem('puti_bulletin_notices', JSON.stringify(notices));
+      localStorage.setItem('puti_bulletin_current_index', currentNoticeIndex);
+    }
+
+    function getEffectiveQrUrl(rawUrl) {
+      if (!rawUrl || rawUrl.trim() === '') return '';
+      if (rawUrl.trim() === 'CHECKIN') {
+        const gasUrl = localStorage.getItem('puti_gas_url') || '';
+        if (gasUrl) return gasUrl;
+        return window.location.href.replace(/index\.html.*/i, 'checkin_mobile.html');
+      }
+      return rawUrl.trim();
+    }
+
+    function renderBulletins() {
+      if (!notices || notices.length === 0) {
+        notices = JSON.parse(JSON.stringify(DEFAULT_NOTICES));
+        currentNoticeIndex = 0;
+      }
+
+      if (currentNoticeIndex >= notices.length) currentNoticeIndex = notices.length - 1;
+      if (currentNoticeIndex < 0) currentNoticeIndex = 0;
+
+      const current = notices[currentNoticeIndex];
+
+      // 更新大字看板內容
+      const titleElem = document.getElementById('displayNoticeTitle');
+      const descElem = document.getElementById('displayNoticeDesc');
+      const countBadge = document.getElementById('noticeCountBadge');
+      const pageIndicator = document.getElementById('noticePageIndicator');
+      const dotsContainer = document.getElementById('noticeDotsContainer');
+
+      if (current && titleElem && descElem) {
+        titleElem.innerText = current.title || '無標題';
+        descElem.innerText = current.desc || '';
+      }
+
+      if (countBadge) countBadge.innerText = notices.length;
+      if (pageIndicator) pageIndicator.innerText = `${currentNoticeIndex + 1} / ${notices.length}`;
+
+      // 處理 QR Code 展示與版面自適應切換
+      const innerContainer = document.getElementById('noticeInnerContainer');
+      const textCol = document.getElementById('noticeTextCol');
+      const qrCol = document.getElementById('noticeQrCol');
+      const qrCanvas = document.getElementById('noticeQrCanvas');
+      const checkinCountBadge = document.getElementById('noticeCheckinCountBadge');
+      const checkinCountSpan = document.getElementById('noticeCheckinCount');
+
+      const targetQrUrl = getEffectiveQrUrl(current ? current.qrUrl : '');
+      currentActiveQrUrl = targetQrUrl;
+
+      if (targetQrUrl && qrCol && qrCanvas && innerContainer && textCol) {
+        // 【模態 A：附帶 QR Code】左右雙欄大螢幕排版
+        innerContainer.className = "w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center text-left my-auto transition-all";
+        textCol.className = "lg:col-span-8 flex flex-col justify-center items-start text-left space-y-6";
+        titleElem.className = "text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-snug max-w-3xl text-left";
+        descElem.className = "text-xl sm:text-2xl lg:text-3xl font-bold text-slate-700 leading-relaxed sm:leading-loose max-w-2xl whitespace-pre-wrap text-left tracking-wide";
+        
+        qrCol.classList.remove('hidden');
+        qrCol.className = "lg:col-span-4 flex flex-col items-center justify-center p-6 bg-slate-50/90 rounded-3xl border border-slate-200/80 shadow-sm shrink-0";
+
+        // 重新繪製 QR Code
+        qrCanvas.innerHTML = '';
+        new QRCode(qrCanvas, {
+          text: targetQrUrl,
+          width: 200,
+          height: 200,
+          colorDark: "#1E1B4B",
+          colorLight: "#FFFFFF",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // 若是報到網址，顯示已報到人數
+        if (current.qrUrl === 'CHECKIN' || targetQrUrl.includes('checkin')) {
+          if (checkinCountBadge && checkinCountSpan) {
+            checkinCountBadge.classList.remove('hidden');
+            checkinCountSpan.innerText = checkinList ? checkinList.length : 0;
+          }
+        } else {
+          if (checkinCountBadge) checkinCountBadge.classList.add('hidden');
+        }
+      } else {
+        // 【模態 B：純文字模式】置中超大字
+        if (innerContainer && textCol) {
+          innerContainer.className = "w-full max-w-4xl flex flex-col justify-center items-center text-center my-auto transition-all";
+          textCol.className = "w-full flex flex-col justify-center items-center text-center space-y-6";
+          titleElem.className = "text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-snug max-w-4xl text-center";
+          descElem.className = "text-xl sm:text-2xl lg:text-3xl font-bold text-slate-700 leading-relaxed sm:leading-loose max-w-2xl whitespace-pre-wrap text-center mx-auto tracking-wide";
+        }
+        if (qrCol) qrCol.classList.add('hidden');
+      }
+
+      // 渲染底部圓點指示器
+      if (dotsContainer) {
+        dotsContainer.innerHTML = notices.map((_, idx) => `
+          <button onclick="switchNotice(${idx})" class="w-2.5 h-2.5 rounded-full transition ${idx === currentNoticeIndex ? 'bg-indigo-600 w-6' : 'bg-slate-300 hover:bg-slate-400'}"></button>
+        `).join('');
+      }
+
+      saveNoticesToStorage();
+    }
+
+    function zoomNoticeQr() {
+      if (!currentActiveQrUrl) return;
+      const zoomCanvas = document.getElementById('qrZoomCanvas');
+      zoomCanvas.innerHTML = '';
+      new QRCode(zoomCanvas, {
+        text: currentActiveQrUrl,
+        width: 280,
+        height: 280,
+        colorDark: "#1E1B4B",
+        colorLight: "#FFFFFF",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      document.getElementById('qrZoomModal').classList.remove('hidden');
+      playSound('click');
+    }
+
+    function closeQrZoomModal() {
+      document.getElementById('qrZoomModal').classList.add('hidden');
+    }
+
+    function fillCheckinUrlToNotice() {
+      const input = document.getElementById('noticeQrUrlInput');
+      if (input) {
+        input.value = 'CHECKIN';
+        playSound('click');
+      }
+    }
+
+    function clearNoticeQrUrl() {
+      const input = document.getElementById('noticeQrUrlInput');
+      if (input) {
+        input.value = '';
+        playSound('click');
+      }
+    }
+
+    function prevNotice() {
+      if (notices.length === 0) return;
+      currentNoticeIndex = (currentNoticeIndex - 1 + notices.length) % notices.length;
+      renderBulletins();
+      playSound('tick');
+    }
+
+    function nextNotice() {
+      if (notices.length === 0) return;
+      currentNoticeIndex = (currentNoticeIndex + 1) % notices.length;
+      renderBulletins();
+      playSound('tick');
+    }
+
+    function switchNotice(index) {
+      if (index >= 0 && index < notices.length) {
+        currentNoticeIndex = index;
+        renderBulletins();
+        playSound('click');
+      }
+    }
+
+    // 歷史 / 例行公告庫 Modal
+    function openRoutineNoticesModal() {
+      renderRoutineNoticesList();
+      document.getElementById('routineNoticesModal').classList.remove('hidden');
+      playSound('click');
+    }
+
+    function closeRoutineNoticesModal() {
+      document.getElementById('routineNoticesModal').classList.add('hidden');
+    }
+
+    function renderRoutineNoticesList() {
+      const container = document.getElementById('routineNoticesList');
+      if (!container) return;
+
+      if (notices.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-10">目前沒有公告項目，請點擊下方「恢復通用例行公告」或「新增公告」</div>`;
+        return;
+      }
+
+      container.innerHTML = notices.map((n, idx) => {
+        const isCurrent = idx === currentNoticeIndex;
+        const hasQr = !!n.qrUrl;
+        return `
+          <div class="p-4 rounded-2xl border transition ${isCurrent ? 'bg-indigo-50/70 border-indigo-300 shadow-sm' : 'bg-slate-50 border-slate-200 hover:bg-white'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1 flex-1 cursor-pointer" onclick="setAsCurrentNotice(${n.id})">
+              <div class="flex items-center gap-2">
+                <h4 class="text-sm font-black text-slate-800">${n.title}</h4>
+                ${isCurrent ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-black bg-indigo-600 text-white">大螢幕展示中</span>' : ''}
+                ${hasQr ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 flex items-center gap-1"><i class="fa-solid fa-qrcode text-[9px]"></i> 附 QR Code</span>' : ''}
+              </div>
+              <p class="text-xs text-slate-500 whitespace-pre-line leading-relaxed">${n.desc}</p>
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <button onclick="setAsCurrentNotice(${n.id})" class="px-3 py-1.5 rounded-xl ${isCurrent ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-700 border border-slate-200 hover:bg-indigo-50'} text-xs font-bold transition flex items-center gap-1 shadow-sm">
+                <i class="fa-solid fa-desktop text-[11px]"></i> 投放
+              </button>
+              <button onclick="openNoticeEditorModal(${n.id})" class="w-8 h-8 rounded-xl bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold transition flex items-center justify-center border border-slate-200 shadow-sm" title="編輯">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button onclick="deleteNotice(${n.id})" class="w-8 h-8 rounded-xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 text-xs font-bold transition flex items-center justify-center border border-slate-200 shadow-sm" title="刪除">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setAsCurrentNotice(id) {
+      const idx = notices.findIndex(n => n.id === id);
+      if (idx !== -1) {
+        currentNoticeIndex = idx;
+        renderBulletins();
+        closeRoutineNoticesModal();
+        playSound('click');
+      }
+    }
+
+    function deleteNotice(id) {
+      if (notices.length <= 1) {
+        alert('公佈欄至少需保留一則公告！');
+        return;
+      }
+      if (confirm('確定要刪除這則公告嗎？')) {
+        notices = notices.filter(n => n.id !== id);
+        if (currentNoticeIndex >= notices.length) currentNoticeIndex = notices.length - 1;
+        renderBulletins();
+        renderRoutineNoticesList();
+        playSound('click');
+      }
+    }
+
+    function restoreDefaultRoutineNotices() {
+      if (confirm('確定要恢復 5 則通用例行課堂公告嗎？現有自訂內容將被重設。')) {
+        notices = JSON.parse(JSON.stringify(DEFAULT_NOTICES));
+        currentNoticeIndex = 0;
+        renderBulletins();
+        renderRoutineNoticesList();
+        playSound('click');
+      }
+    }
+
+    // 公告編輯與新增（純粹標題、說明文字、選填 QR Code）
+    function openNoticeEditorModal(id = null) {
+      editingNoticeId = id;
+      const titleElem = document.getElementById('noticeEditorModalTitle');
+      const titleInput = document.getElementById('noticeTitleInput');
+      const descInput = document.getElementById('noticeDescInput');
+      const qrInput = document.getElementById('noticeQrUrlInput');
+
+      if (id !== null) {
+        // 編輯既有公告
+        const notice = notices.find(n => n.id === id);
+        if (notice) {
+          titleElem.innerHTML = '<i class="fa-solid fa-pen-to-square text-indigo-600"></i> 編輯公告';
+          titleInput.value = notice.title || '';
+          descInput.value = notice.desc || '';
+          if (qrInput) qrInput.value = notice.qrUrl || '';
+        }
+      } else {
+        // 新增公告
+        titleElem.innerHTML = '<i class="fa-solid fa-plus text-indigo-600"></i> 新增公告';
+        titleInput.value = '';
+        descInput.value = '';
+        if (qrInput) qrInput.value = '';
+      }
+
+      document.getElementById('noticeEditorModal').classList.remove('hidden');
+      playSound('click');
+    }
+
+    function editCurrentNotice() {
+      if (notices.length > 0 && currentNoticeIndex < notices.length) {
+        openNoticeEditorModal(notices[currentNoticeIndex].id);
+      }
+    }
+
+    function closeNoticeEditorModal() {
+      document.getElementById('noticeEditorModal').classList.add('hidden');
+    }
+
+    function saveNotice() {
+      const title = document.getElementById('noticeTitleInput').value.trim();
+      const desc = document.getElementById('noticeDescInput').value.trim();
+      const qrUrl = document.getElementById('noticeQrUrlInput') ? document.getElementById('noticeQrUrlInput').value.trim() : '';
+
+      if (!title) {
+        alert('請填寫公告標題！');
+        return;
+      }
+
+      if (editingNoticeId !== null) {
+        // 儲存修改
+        const target = notices.find(n => n.id === editingNoticeId);
+        if (target) {
+          target.title = title;
+          target.desc = desc;
+          target.qrUrl = qrUrl;
+        }
+      } else {
+        // 新增並直接展示
+        const newNotice = {
+          id: Date.now(),
+          title: title,
+          desc: desc,
+          qrUrl: qrUrl
+        };
+        notices.unshift(newNotice);
+        currentNoticeIndex = 0;
+      }
+
+      renderBulletins();
+      renderRoutineNoticesList();
+      closeNoticeEditorModal();
+      playSound('click');
+    }
+
+    // ---------------- 彈窗輔助函式 ----------------
+    function openConfigModal() { document.getElementById('configModal').classList.remove('hidden'); }
+    function closeConfigModal() { document.getElementById('configModal').classList.add('hidden'); }
+
+    function openManualAddModal() { document.getElementById('manualAddModal').classList.remove('hidden'); }
+    function closeManualAddModal() { document.getElementById('manualAddModal').classList.add('hidden'); }
+    function confirmManualAdd() {
+      const school = document.getElementById('manualSchool').value.trim();
+      const name = document.getElementById('manualName').value.trim();
+      const pain = document.getElementById('manualPain').value.trim();
+      if (!school || !name) {
+        alert('學校與姓名為必填！');
+        return;
+      }
+      checkinList.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString(),
+        school: school,
+        name: name,
+        years: '研習夥伴',
+        painPoints: pain || '無特別痛點',
+        aiGoal: '現場手動加入',
+        aiConcern: '無'
+      });
+      renderCheckinList();
+      generateTeams();
+      closeManualAddModal();
+      document.getElementById('manualSchool').value = '';
+      document.getElementById('manualName').value = '';
+      document.getElementById('manualPain').value = '';
+    }
+
+    function openDetailModal(idx) {
+      const t = checkinList[idx];
+      if (!t) return;
+      document.getElementById('modalTeacherName').innerText = t.name;
+      document.getElementById('modalTeacherSchool').innerText = `${t.school} ‧ ${t.years || '未註記年資'}`;
+      document.getElementById('modalTeacherPain').innerText = t.painPoints || '無特別提出';
+      document.getElementById('modalTeacherGoal').innerText = t.aiGoal || '無特別提出';
+      document.getElementById('modalTeacherConcern').innerText = t.aiConcern || '無特別提出';
+      document.getElementById('detailModal').classList.remove('hidden');
+    }
+    function closeDetailModal() { document.getElementById('detailModal').classList.add('hidden'); }
+
+    // ---------------- 排行榜與課堂抽獎系統 ----------------
+    const DEFAULT_REWARDS = [
+      "🎉【黃金回答免死金牌】：下次課堂點名若抽中你，可欽點任一位夥伴代答！",
+      "☕【星級特調能量空氣咖啡】：全場為您遞上一杯精神咖啡，立刻提神 100%！",
+      "📸【全場起立榮譽鼓掌 10 秒】：享受全場老師為您的精采表現熱烈歡呼！",
+      "🌟【大螢幕公佈欄常駐大師稱號】：今日最佳學習典範，名字直接置頂大螢幕！",
+      "🥐【松鼠先生的魔法麵包】：課堂智慧直接灌頂，下半場靈感湧現！",
+      "🪄【AI 幻覺退散保平安符】：保證今日實作出的題目精準無比、絕不翻車！",
+      "💌【講師親簽限定電子愛心徽章】：Padlet 成果發表獲得講師第一首選愛心！",
+      "👑【研習茶水VIP通關特權】：下課第一位優先倒水、上洗手間免排隊特權！",
+      "🧘【課堂正念深呼吸 30 秒領航員】：全場陪您閉目養神深呼吸，放鬆腦波！",
+      "✨【壓軸幸運星大合照位】：結訓大合照時享有正核心黃金 VIP 站位！"
+    ];
+
+    let customRewards = JSON.parse(localStorage.getItem('puti_rewards_pool')) || [...DEFAULT_REWARDS];
+    let lotteryRolling = false;
+    let lotteryInterval = null;
+
+    function renderLeaderboard() {
+      // 1. 渲染個人排行榜
+      const indivContainer = document.getElementById('individualLeaderboardList');
+      if (indivContainer) {
+        if (checkinList.length === 0) {
+          indivContainer.innerHTML = `<div class="text-xs text-slate-400 text-center py-14">尚無學員名單，請先報到或載入模擬學員</div>`;
+        } else {
+          // 依分數降序排列
+          const sortedList = [...checkinList].sort((a, b) => (b.score || 0) - (a.score || 0));
+          indivContainer.innerHTML = sortedList.map((t, idx) => {
+            const score = t.score || 0;
+            const rankBadge = idx === 0 ? 'bg-amber-100 text-amber-700 border-amber-300' :
+                             idx === 1 ? 'bg-slate-200 text-slate-700 border-slate-300' :
+                             idx === 2 ? 'bg-orange-100 text-orange-700 border-orange-300' : 'bg-slate-50 text-slate-500 border-slate-200';
+            const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`;
+            const canLottery = score >= 5 ? `<span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">可抽獎！</span>` : '';
+
+            return `
+              <div class="bg-white border border-slate-200/90 hover:border-indigo-300 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-sm transition">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-8 h-8 rounded-xl border flex items-center justify-center text-xs font-black shrink-0 ${rankBadge}">
+                    ${medal}
+                  </div>
+                  <div class="truncate">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-black text-slate-800">${t.name}</span>
+                      <span class="text-[10px] px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">${t.school}</span>
+                      ${canLottery}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <div class="text-xl font-black text-indigo-600 digital-display w-10 text-right">${score}</div>
+                  <div class="flex items-center gap-1">
+                    <button onclick="changeIndividualScore(${t.id}, -1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition flex items-center justify-center border border-slate-200">
+                      -
+                    </button>
+                    <button onclick="changeIndividualScore(${t.id}, 1)" class="w-7 h-7 rounded-lg bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white text-xs font-bold transition flex items-center justify-center border border-indigo-200 shadow-sm">
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // 2. 渲染小組排行榜
+      const teamContainer = document.getElementById('teamLeaderboardList');
+      if (teamContainer) {
+        const sortedTeams = [...teams].sort((a, b) => (b.score || 0) - (a.score || 0));
+        teamContainer.innerHTML = sortedTeams.map((t, idx) => {
+          const score = t.score || 0;
+          const rankColor = idx === 0 ? 'border-amber-400 bg-amber-50/40' :
+                            idx === 1 ? 'border-slate-300 bg-slate-50/50' :
+                            idx === 2 ? 'border-orange-300 bg-orange-50/30' : 'border-slate-200 bg-white';
+          const crown = idx === 0 ? '👑' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+          const canLottery = score >= 5 ? `<span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold animate-pulse">全組可抽獎！</span>` : '';
+
+          return `
+            <div class="border-2 ${rankColor} p-4 rounded-2xl flex items-center justify-between gap-4 shadow-sm hover:shadow-md transition">
+              <div class="flex items-center gap-3.5">
+                <div class="text-2xl">${crown}</div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="font-black text-sm text-slate-800">${t.name}</h4>
+                    <span class="text-[10px] text-slate-500 font-bold bg-white px-2 py-0.5 rounded-full border border-slate-200">${t.members.length} 人</span>
+                    ${canLottery}
+                  </div>
+                  <div class="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">
+                    成員：${t.members.map(m => m.name).join('、') || '尚未分派'}
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <div class="text-3xl font-black text-amber-500 digital-display">${score}</div>
+                <div class="flex items-center gap-1">
+                  <button onclick="changeTeamScore(${t.id}, -1)" class="w-8 h-8 rounded-xl bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 text-xs font-bold transition flex items-center justify-center border border-slate-200 shadow-sm">
+                    -
+                  </button>
+                  <button onclick="changeTeamScore(${t.id}, 1)" class="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white text-xs font-bold transition flex items-center justify-center border border-indigo-200 shadow-sm">
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 更新獎項計數標籤
+      const countLabel = document.getElementById('rewardCountLabel');
+      if (countLabel) countLabel.innerText = customRewards.length;
+    }
+
+    function changeIndividualScore(teacherId, delta) {
+      const t = checkinList.find(item => item.id === teacherId);
+      if (t) {
+        t.score = Math.max(0, (t.score || 0) + delta);
+        renderLeaderboard();
+        if (delta > 0) {
+          confetti({ particleCount: 20, spread: 35 });
+          playSound('scoreUp');
+        } else {
+          playSound('scoreDown');
+        }
+      }
+    }
+
+    // 抽獎轉盤邏輯
+    function openLotteryModal() {
+      // 填充電梯中滿 5 分的名單（個人與組別）
+      const select = document.getElementById('lotteryTargetSelect');
+      select.innerHTML = '';
+
+      let eligibleCount = 0;
+      // 檢查個人
+      checkinList.filter(t => (t.score || 0) >= 5).forEach(t => {
+        eligibleCount++;
+        const opt = document.createElement('option');
+        opt.value = `indiv:${t.id}`;
+        opt.innerText = `👤 個人：${t.name} (${t.school}) - 目前 ${t.score} 分`;
+        select.appendChild(opt);
+      });
+
+      // 檢查組別
+      teams.filter(g => (g.score || 0) >= 5).forEach(g => {
+        eligibleCount++;
+        const opt = document.createElement('option');
+        opt.value = `team:${g.id}`;
+        opt.innerText = `👥 小組：${g.name} - 目前 ${g.score} 分`;
+        select.appendChild(opt);
+      });
+
+      if (eligibleCount === 0) {
+        // 沒有滿 5 分也允許體驗
+        const opt = document.createElement('option');
+        opt.value = 'free';
+        opt.innerText = '✨ 老師特別開箱！體驗抽獎一次';
+        select.appendChild(opt);
+      }
+
+      document.getElementById('lotteryPrizeDisplay').innerText = '點擊下方開始抽取獎品！';
+      document.getElementById('lotterySubtitleDisplay').innerText = '累積滿 5 分即可兌換隨機獎項';
+      document.getElementById('lotteryStatusText').innerText = 'READY TO DRAW';
+      document.getElementById('lotteryModal').classList.remove('hidden');
+      playSound('click');
+    }
+
+    function closeLotteryModal() {
+      if (lotteryRolling) {
+        clearInterval(lotteryInterval);
+        lotteryRolling = false;
+      }
+      document.getElementById('lotteryModal').classList.add('hidden');
+      renderLeaderboard();
+    }
+
+    function toggleLotteryRoll() {
+      const startBtn = document.getElementById('startLotteryBtn');
+      const prizeDisplay = document.getElementById('lotteryPrizeDisplay');
+      const subtitleDisplay = document.getElementById('lotterySubtitleDisplay');
+      const statusText = document.getElementById('lotteryStatusText');
+      const select = document.getElementById('lotteryTargetSelect');
+
+      if (customRewards.length === 0) {
+        alert('獎品池目前沒有獎項，請先前往編輯獎品池！');
+        return;
+      }
+
+      if (lotteryRolling) {
+        // 停止滾動，定格獲獎
+        clearInterval(lotteryInterval);
+        lotteryRolling = false;
+        startBtn.innerHTML = '<i class="fa-solid fa-dice-d20"></i> <span>再抽一次</span>';
+        startBtn.classList.remove('from-rose-500', 'to-red-600');
+        startBtn.classList.add('from-amber-500', 'to-rose-500');
+        statusText.innerText = 'CONGRATULATIONS! 恭喜中大獎！';
+
+        // 扣除 5 分
+        const val = select.value;
+        if (val.startsWith('indiv:')) {
+          const id = parseInt(val.split(':')[1], 10);
+          const t = checkinList.find(x => x.id === id);
+          if (t && t.score >= 5) {
+            t.score -= 5;
+            subtitleDisplay.innerText = `已為 ${t.name} 老師扣抵 5 分（剩餘 ${t.score} 分）`;
+          }
+        } else if (val.startsWith('team:')) {
+          const id = parseInt(val.split(':')[1], 10);
+          const g = teams.find(x => x.id === id);
+          if (g && g.score >= 5) {
+            g.score -= 5;
+            subtitleDisplay.innerText = `已為 ${g.name} 扣抵 5 分（剩餘 ${g.score} 分）`;
+          }
+        }
+
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        playSound('win');
+        renderLeaderboard();
+      } else {
+        // 開始隨機滾動
+        lotteryRolling = true;
+        startBtn.innerHTML = '<i class="fa-solid fa-stop"></i> <span>開箱定格！</span>';
+        startBtn.classList.remove('from-amber-500', 'to-rose-500');
+        startBtn.classList.add('from-rose-500', 'to-red-600');
+        statusText.innerText = 'DRAWING... 命運轉動中';
+        playSound('click');
+
+        lotteryInterval = setInterval(() => {
+          playSound('tick');
+          const randomPrize = customRewards[Math.floor(Math.random() * customRewards.length)];
+          prizeDisplay.innerHTML = `<span class="animate-pulse">${randomPrize}</span>`;
+        }, 70);
+      }
+    }
+
+    // 獎品編輯器邏輯
+    function openRewardEditorModal() {
+      document.getElementById('rewardListTextarea').value = customRewards.join('\n');
+      document.getElementById('rewardEditorModal').classList.remove('hidden');
+      playSound('click');
+    }
+
+    function closeRewardEditorModal() {
+      document.getElementById('rewardEditorModal').classList.add('hidden');
+    }
+
+    function saveCustomRewards() {
+      const text = document.getElementById('rewardListTextarea').value.trim();
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      if (lines.length === 0) {
+        alert('獎品池至少需要保留 1 個獎項！');
+        return;
+      }
+      customRewards = lines;
+      localStorage.setItem('puti_rewards_pool', JSON.stringify(customRewards));
+      renderLeaderboard();
+      closeRewardEditorModal();
+      playSound('click');
+      alert(`獎品池已更新！目前共有 ${customRewards.length} 個獎品可供抽取。`);
+    }
+
+    function resetDefaultRewards() {
+      if (confirm('確定要恢復預設獎勵嗎？')) {
+        customRewards = [...DEFAULT_REWARDS];
+        document.getElementById('rewardListTextarea').value = customRewards.join('\n');
+        localStorage.setItem('puti_rewards_pool', JSON.stringify(customRewards));
+        renderLeaderboard();
+        playSound('click');
+      }
+    }
+
+    // 全螢幕切換
+    function toggleFullScreen() {
+      const icon = document.getElementById('fsIcon');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        icon.classList.remove('fa-expand');
+        icon.classList.add('fa-compress');
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+          icon.classList.remove('fa-compress');
+          icon.classList.add('fa-expand');
+        }
+      }
+    }
+  </script>
+</body>
+</html>
