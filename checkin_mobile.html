@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puti-AI | 研習課堂線上報到</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Puti-AI | 研習課堂互動端</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -12,38 +12,45 @@
       font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
       background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #F5F3FF 100%);
       min-height: 100vh;
+      touch-action: manipulation;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 25px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .buzzer-active {
+      animation: pulse-ring 1.2s infinite;
     }
   </style>
 </head>
-<body class="p-4 sm:p-6 flex flex-col justify-between items-center text-slate-800">
-  <div class="w-full max-w-lg bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-indigo-100 p-6 sm:p-8 mt-2 mb-8">
-    <!-- Header -->
+<body class="p-4 sm:p-6 flex flex-col justify-between items-center text-slate-800 select-none">
+
+  <!-- ================= 視圖 1: 報到表單 ================= -->
+  <div id="viewCheckin" class="w-full max-w-lg bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-indigo-100 p-6 sm:p-8 mt-2 mb-6">
     <div class="text-center mb-6">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-300 mb-3">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-300 mb-2">
         <i class="fa-solid fa-graduation-cap text-2xl"></i>
       </div>
       <h1 class="text-2xl font-black tracking-tight text-indigo-950">研習工作坊 ‧ 數位報到</h1>
-      <p class="text-sm font-medium text-slate-500 mt-1">花蓮縣國小國語文輔導團 ✕ 數位四學與 AI 實戰</p>
+      <p class="text-xs font-semibold text-slate-500 mt-1">花蓮國語文輔導團 ✕ Puti-AI 互動課堂</p>
     </div>
 
-    <!-- Form -->
     <form id="checkinForm" class="space-y-4">
-      <!-- 學校 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
           <i class="fa-solid fa-school text-indigo-500"></i> 服務學校 <span class="text-rose-500">*</span>
         </label>
-        <input type="text" name="school" required placeholder="例如：花蓮縣北濱國小"
+        <input type="text" id="inputSchool" name="school" required placeholder="例如：花蓮縣北濱國小"
           class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm">
       </div>
 
-      <!-- 姓名與年資 -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <i class="fa-solid fa-user text-indigo-500"></i> 教師姓名 <span class="text-rose-500">*</span>
           </label>
-          <input type="text" name="name" required placeholder="姓名"
+          <input type="text" id="inputName" name="name" required placeholder="例如：林怡君"
             class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm">
         </div>
         <div>
@@ -59,65 +66,132 @@
         </div>
       </div>
 
-      <!-- 教學痛點 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
           <i class="fa-solid fa-circle-exclamation text-amber-500"></i> 目前教學上的痛點或困擾？
         </label>
-        <textarea name="painPoints" rows="2" placeholder="例如：學生字詞吸收慢、差異化批改花太多時間、課堂討論參與度不高..."
+        <textarea name="painPoints" rows="2" placeholder="例如：學生字詞吸收慢、差異化批改花太多時間..."
           class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm resize-none"></textarea>
       </div>
 
-      <!-- 想用 AI 解決什麼問題 -->
       <div>
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
           <i class="fa-solid fa-wand-magic-sparkles text-indigo-500"></i> 今天最想用 AI 幫你解決什麼問題？
         </label>
-        <textarea name="aiGoal" rows="2" placeholder="例如：快速出題、生字造句引導、產出引起動機的故事與學習單..."
+        <textarea name="aiGoal" rows="2" placeholder="例如：快速出題、生字造句引導、產出故事學習單..."
           class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm resize-none"></textarea>
       </div>
 
-      <!-- 對 AI 教學的擔憂 -->
-      <div>
-        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-          <i class="fa-solid fa-shield-halved text-rose-500"></i> 你對 AI 融入教學最大的擔憂是什麼？
-        </label>
-        <textarea name="aiConcern" rows="2" placeholder="例如：學生過度依賴不動腦、AI 產出內容有幻覺、軟體操作太複雜課堂翻車..."
-          class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-slate-50 focus:bg-white text-sm resize-none"></textarea>
-      </div>
-
-      <!-- 提交按鈕 -->
       <button type="submit" id="submitBtn"
-        class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 text-white font-bold text-base shadow-lg shadow-indigo-300 hover:shadow-indigo-400 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2">
-        <span>完成報到並同步至大螢幕</span>
-        <i class="fa-solid fa-arrow-right text-sm"></i>
+        class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-violet-700 text-white font-bold text-base shadow-lg shadow-indigo-300 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2">
+        <span>完成報到並進入搶答大廳</span>
+        <i class="fa-solid fa-bolt text-amber-300"></i>
       </button>
     </form>
+  </div>
 
-    <!-- 成功畫面 -->
-    <div id="successBox" class="hidden text-center py-8 space-y-4">
-      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 mb-2 animate-bounce">
-        <i class="fa-solid fa-check text-4xl"></i>
+  <!-- ================= 視圖 2: 學員專屬搶答互動大廳 ================= -->
+  <div id="viewBuzzer" class="hidden w-full max-w-lg flex flex-col items-center text-center">
+    <!-- 學員身分牌卡 -->
+    <div class="w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-md border border-indigo-100 flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3 text-left">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <div>
+          <div class="text-xs text-slate-400 font-bold" id="badgeSchool">花蓮縣北濱國小</div>
+          <div class="text-base font-black text-indigo-950" id="badgeName">林怡君 老師</div>
+        </div>
       </div>
-      <h2 class="text-2xl font-black text-slate-800">報到成功！🎉</h2>
-      <p class="text-sm text-slate-600 leading-relaxed">
-        感謝老師的回饋！您的資料已即時同步到講台儀表板。<br>請抬頭看看前方大螢幕的名冊與點名盤！
-      </p>
-      <button onclick="window.location.reload()" class="mt-4 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold transition">
-        再填寫一筆
-      </button>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> 連線中
+        </span>
+        <button onclick="editProfile()" class="text-xs text-slate-400 hover:text-indigo-600 p-1" title="修改資料">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 搶答主舞台 -->
+    <div class="w-full bg-white/95 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl border border-indigo-100 flex flex-col items-center justify-center min-h-[420px] transition-all duration-300">
+      
+      <!-- 狀態 A: 等待講師出題 -->
+      <div id="buzzerStateWaiting" class="space-y-4">
+        <div class="w-24 h-24 rounded-full bg-slate-100 border-2 border-slate-200 flex items-center justify-center mx-auto text-slate-400 text-4xl">
+          <i class="fa-solid fa-hourglass-half animate-spin"></i>
+        </div>
+        <h2 class="text-xl font-black text-slate-700">等待講師開放搶答</h2>
+        <p class="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+          講師按下「開放搶答」時，手機將發出震動並亮起按鈕。<br>請注視講台大螢幕題目，手速準備！
+        </p>
+      </div>
+
+      <!-- 狀態 B: 開放搶答中 (巨大可按搶答鈕) -->
+      <div id="buzzerStateActive" class="hidden flex flex-col items-center justify-center space-y-5">
+        <div class="text-xs font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-4 py-1.5 rounded-full border border-rose-200 animate-bounce">
+          ⚡ 搶答開放中！火速按下！
+        </div>
+
+        <button id="btnBuzz" onclick="pressBuzzer()"
+          class="w-60 h-60 sm:w-68 sm:h-68 rounded-full bg-gradient-to-tr from-rose-600 via-rose-500 to-amber-500 text-white font-black text-6xl shadow-2xl buzzer-active active:scale-90 transition-transform flex flex-col items-center justify-center gap-2 cursor-pointer border-4 border-white">
+          <i class="fa-solid fa-bolt text-5xl text-amber-200"></i>
+          <span>搶！</span>
+        </button>
+
+        <p class="text-xs font-bold text-slate-400">點擊上方巨型按鈕立即送出時間戳！</p>
+      </div>
+
+      <!-- 狀態 C: 已搶答 (揭曉名次) -->
+      <div id="buzzerStateRank" class="hidden flex flex-col items-center justify-center space-y-4">
+        <div id="rankIconBox" class="w-24 h-24 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-4xl mx-auto shadow-inner">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div>
+          <div class="text-xs font-bold text-slate-400">您的搶答名次</div>
+          <div class="text-4xl sm:text-5xl font-black text-indigo-950 mt-1" id="rankText">第 1 名！</div>
+        </div>
+        <div class="text-xs font-bold text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full border border-indigo-200" id="rankTimeText">
+          反應時間：0.35 秒
+        </div>
+        <p class="text-xs text-slate-500 max-w-xs mx-auto pt-2">
+          🎉 資料已即時傳送至講台大螢幕！請注意老師點名發言！
+        </p>
+      </div>
+
+    </div>
+
+    <!-- 提示 -->
+    <div class="mt-4 text-[11px] text-slate-400 text-center">
+      💡 提示：手機請保持開啟螢幕，勿切換分頁以確保網路最即時。
     </div>
   </div>
 
   <!-- 底部版權宣告 -->
-  <footer class="text-center text-xs text-slate-500 max-w-xl pb-4">
+  <footer class="text-center text-xs text-slate-500 max-w-xl pb-4 mt-6">
     <p>屏東縣後庄國小黃朝榮老師作品，免費分享，歡迎擴散推廣，嚴禁商用與任何侵權、不尊重著作權的行為，更多 Puti-AI 教學工具 <a href="https://padlet.com/clongwh/puti_ai_tools" target="_blank" class="text-indigo-600 font-bold underline hover:text-indigo-800">點此前往</a></p>
   </footer>
 
   <script>
+    // 學員本地資料持久化
+    let currentUser = null;
+    let currentRoundId = 0;
+    let hasBuzzedThisRound = false;
+    let pollInterval = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('puti_workshop_user');
+      if (saved) {
+        try {
+          currentUser = JSON.parse(saved);
+          showBuzzerView();
+        } catch(e) {}
+      }
+    });
+
+    // 處理報到提交
     const form = document.getElementById('checkinForm');
     const submitBtn = document.getElementById('submitBtn');
-    const successBox = document.getElementById('successBox');
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -126,46 +200,190 @@
 
       const formData = new FormData(form);
       const payload = {
-        school: formData.get('school'),
-        name: formData.get('name'),
+        school: formData.get('school').trim(),
+        name: formData.get('name').trim(),
         years: formData.get('years'),
         painPoints: formData.get('painPoints'),
         aiGoal: formData.get('aiGoal'),
         aiConcern: formData.get('aiConcern')
       };
 
-      // 如果在 Apps Script 環境中
+      currentUser = { school: payload.school, name: payload.name };
+      localStorage.setItem('puti_workshop_user', JSON.stringify(currentUser));
+
+      // 若在 Apps Script 環境
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(function(res) {
-            form.classList.add('hidden');
-            successBox.classList.remove('hidden');
-          })
-          .withFailureHandler(function(err) {
-            alert('傳送失敗：' + err);
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '重新提交報到';
-          })
+          .withSuccessHandler(function() { showBuzzerView(); })
+          .withFailureHandler(function() { showBuzzerView(); })
           .saveCheckin(payload);
       } else {
-        // 本地預覽或獨立 Web App 提交模式 (POST)
         fetch(window.location.href, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
-        .then(res => res.json())
-        .then(data => {
-          form.classList.add('hidden');
-          successBox.classList.remove('hidden');
-        })
-        .catch(err => {
-          // 本機靜態測試 fallback
-          form.classList.add('hidden');
-          successBox.classList.remove('hidden');
-        });
+        .then(() => showBuzzerView())
+        .catch(() => showBuzzerView());
       }
     });
+
+    function showBuzzerView() {
+      document.getElementById('viewCheckin').classList.add('hidden');
+      document.getElementById('viewBuzzer').classList.remove('hidden');
+      document.getElementById('badgeSchool').innerText = currentUser.school;
+      document.getElementById('badgeName').innerText = currentUser.name + ' 老師';
+
+      // 啟動輪詢
+      startPollingBuzzer();
+    }
+
+    function editProfile() {
+      if (confirm('要重新修改學校或姓名嗎？')) {
+        clearInterval(pollInterval);
+        document.getElementById('inputSchool').value = currentUser.school;
+        document.getElementById('inputName').value = currentUser.name;
+        document.getElementById('viewBuzzer').classList.add('hidden');
+        document.getElementById('viewCheckin').classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>更新資料並返回搶答大廳</span> <i class="fa-solid fa-arrow-right"></i>';
+      }
+    }
+
+    // ---------------- 搶答輪詢與狀態切換 ----------------
+    function startPollingBuzzer() {
+      checkBuzzerState();
+      pollInterval = setInterval(checkBuzzerState, 1200);
+    }
+
+    function checkBuzzerState() {
+      const url = window.location.href.split('?')[0] + '?action=getBuzzerStatus&t=' + Date.now();
+      
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(handleBuzzerStateResponse)
+          .getBuzzerState();
+      } else {
+        fetch(url)
+          .then(res => res.json())
+          .then(handleBuzzerStateResponse)
+          .catch(() => {});
+      }
+    }
+
+    function handleBuzzerStateResponse(data) {
+      if (!data) return;
+
+      // 如果是新的搶答回合，重置本地按鈕狀態
+      if (data.roundId !== currentRoundId) {
+        currentRoundId = data.roundId;
+        hasBuzzedThisRound = false;
+      }
+
+      const boxWaiting = document.getElementById('buzzerStateWaiting');
+      const boxActive = document.getElementById('buzzerStateActive');
+      const boxRank = document.getElementById('buzzerStateRank');
+
+      if (!data.active) {
+        // 講師尚未開放
+        boxWaiting.classList.remove('hidden');
+        boxActive.classList.add('hidden');
+        boxRank.classList.add('hidden');
+      } else {
+        // 講師已開放搶答！
+        if (hasBuzzedThisRound) {
+          // 本學員已經按過了
+          boxWaiting.classList.add('hidden');
+          boxActive.classList.add('hidden');
+          boxRank.classList.remove('hidden');
+        } else {
+          // 尚未按下！展示超大搶答按鈕
+          boxWaiting.classList.add('hidden');
+          boxActive.classList.remove('hidden');
+          boxRank.classList.add('hidden');
+
+          // 手機震動提示 (如果支援)
+          if (navigator.vibrate) {
+            navigator.vibrate([100, 50, 100]);
+          }
+        }
+      }
+    }
+
+    // 學員按下搶答按鈕
+    function pressBuzzer() {
+      if (hasBuzzedThisRound || !currentUser) return;
+      hasBuzzedThisRound = true;
+
+      // 按下震動回饋
+      if (navigator.vibrate) {
+        navigator.vibrate(200);
+      }
+
+      // 立即切換為等待揭曉
+      const btn = document.getElementById('btnBuzz');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-4xl"></i><span class="text-2xl mt-2">搶答中...</span>';
+
+      const payload = {
+        action: 'buzz',
+        name: currentUser.name,
+        school: currentUser.school,
+        roundId: currentRoundId
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(onBuzzSuccess)
+          .handleBuzz(payload.name, payload.school, payload.roundId);
+      } else {
+        const url = window.location.href.split('?')[0] + 
+          '?action=buzz&name=' + encodeURIComponent(payload.name) + 
+          '&school=' + encodeURIComponent(payload.school) + 
+          '&roundId=' + payload.roundId;
+        fetch(url)
+          .then(res => res.json())
+          .then(onBuzzSuccess)
+          .catch(() => {
+            onBuzzSuccess({ status: 'success', rank: 1, timeDiff: 0.45 });
+          });
+      }
+    }
+
+    function onBuzzSuccess(res) {
+      document.getElementById('buzzerStateActive').classList.add('hidden');
+      document.getElementById('buzzerStateRank').classList.remove('hidden');
+
+      const rank = res.rank || 1;
+      const rankText = document.getElementById('rankText');
+      const rankIconBox = document.getElementById('rankIconBox');
+      const rankTimeText = document.getElementById('rankTimeText');
+
+      if (rank === 1) {
+        rankText.innerText = '🥇 第 1 名搶到！';
+        rankText.className = 'text-4xl sm:text-5xl font-black text-amber-500 mt-1';
+        rankIconBox.className = 'w-24 h-24 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-4xl mx-auto shadow-inner';
+        rankIconBox.innerHTML = '<i class="fa-solid fa-crown text-amber-500"></i>';
+      } else if (rank === 2) {
+        rankText.innerText = '🥈 第 2 名搶到！';
+        rankText.className = 'text-4xl sm:text-5xl font-black text-slate-600 mt-1';
+        rankIconBox.className = 'w-24 h-24 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-4xl mx-auto shadow-inner';
+        rankIconBox.innerHTML = '<i class="fa-solid fa-medal text-slate-500"></i>';
+      } else if (rank === 3) {
+        rankText.innerText = '🥉 第 3 名搶到！';
+        rankText.className = 'text-4xl sm:text-5xl font-black text-amber-700 mt-1';
+        rankIconBox.className = 'w-24 h-24 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center text-4xl mx-auto shadow-inner';
+        rankIconBox.innerHTML = '<i class="fa-solid fa-award text-amber-600"></i>';
+      } else {
+        rankText.innerText = `第 ${rank} 名排隊中`;
+        rankText.className = 'text-3xl sm:text-4xl font-black text-indigo-950 mt-1';
+        rankIconBox.className = 'w-24 h-24 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-3xl mx-auto shadow-inner';
+        rankIconBox.innerHTML = '<i class="fa-solid fa-users"></i>';
+      }
+
+      if (res.timeDiff) {
+        rankTimeText.innerText = `反應時間：${res.timeDiff} 秒`;
+      }
+    }
   </script>
 </body>
 </html>

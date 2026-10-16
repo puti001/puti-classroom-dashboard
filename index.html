@@ -115,6 +115,9 @@
       <button onclick="switchTab('roulette')" id="tabBtn-roulette" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
         <i class="fa-solid fa-dice"></i> 隨機點名
       </button>
+      <button onclick="switchTab('buzzer')" id="tabBtn-buzzer" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
+        <i class="fa-solid fa-bolt text-amber-500"></i> 即時搶答
+      </button>
       <button onclick="switchTab('teams')" id="tabBtn-teams" class="tab-btn px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 text-slate-600 hover:text-indigo-600">
         <i class="fa-solid fa-users"></i> 分組計分
       </button>
@@ -289,6 +292,130 @@
             </label>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ------------------ 模組: 即時搶答大舞台 ------------------ -->
+    <section id="view-buzzer" class="tab-content hidden space-y-6">
+      <div class="warm-card p-6 sm:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden min-h-[640px] bg-gradient-to-b from-white via-amber-50/20 to-slate-50 border-2 border-amber-200 shadow-xl">
+        
+        <!-- 頂部資訊與控制列 -->
+        <div class="w-full flex flex-wrap items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+            <span class="text-sm font-extrabold text-amber-600 tracking-wider uppercase flex items-center gap-1.5">
+              <i class="fa-solid fa-bolt"></i> 全場手機即時搶答系統
+            </span>
+            <span id="buzzerStatusBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+              等待發起
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- 開放搶答按鈕 -->
+            <button onclick="startBuzzerFromHost()" id="btnHostStartBuzz" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-black text-sm shadow-md shadow-amber-200 hover:scale-105 active:scale-95 transition flex items-center gap-2">
+              <i class="fa-solid fa-play"></i> <span>開放全場搶答</span>
+            </button>
+            <!-- 截止與下一題按鈕 -->
+            <button onclick="resetBuzzerFromHost()" class="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm border border-slate-200 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate-left"></i> 重置 / 下一題
+            </button>
+          </div>
+        </div>
+
+        <!-- 搶答展示核心區 -->
+        <div class="my-auto py-6 w-full max-w-4xl flex flex-col items-center justify-center">
+          
+          <!-- 狀態 A: 尚未開放 -->
+          <div id="hostBuzzerIdle" class="flex flex-col items-center justify-center py-12 space-y-4">
+            <div class="w-28 h-28 rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center text-amber-500 text-5xl shadow-inner">
+              <i class="fa-solid fa-hand-pointer animate-bounce"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-800">準備好搶答了嗎？</h2>
+            <p class="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+              點擊上方「<span class="text-amber-600 font-bold">開放全場搶答</span>」按鈕，系統將自動倒數 3、2、1，學員手機將同步震動亮起搶答鈕！
+            </p>
+          </div>
+
+          <!-- 狀態 B: 倒數中 -->
+          <div id="hostBuzzerCountdown" class="hidden flex flex-col items-center justify-center py-10 space-y-4">
+            <div id="hostCountdownNumber" class="text-9xl font-black text-amber-500 animate-ping">3</div>
+            <div class="text-lg font-bold text-slate-600">準備... 手速全開！</div>
+          </div>
+
+          <!-- 狀態 C: 搶答中，等待王者 -->
+          <div id="hostBuzzerRacing" class="hidden flex flex-col items-center justify-center py-10 space-y-5">
+            <div class="w-28 h-28 rounded-full bg-rose-50 border-4 border-rose-400 flex items-center justify-center text-rose-500 text-5xl shadow-2xl animate-pulse">
+              <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div class="text-3xl sm:text-4xl font-black text-rose-600 tracking-wider animate-bounce">
+              ⚡ 搶答開放中！火速按下手機！
+            </div>
+            <div class="text-sm font-bold text-slate-400">毫秒監聽中... 第一位按下者將直接登上大螢幕！</div>
+          </div>
+
+          <!-- 狀態 D: 揭曉第一名王者與後續隊列 -->
+          <div id="hostBuzzerResults" class="hidden w-full space-y-6">
+            <!-- 第一名冠軍展示卡 -->
+            <div class="w-full bg-gradient-to-r from-amber-50 via-white to-amber-50 border-4 border-amber-300 rounded-3xl p-8 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div class="absolute -top-6 -right-6 text-9xl text-amber-200/40 pointer-events-none">
+                <i class="fa-solid fa-crown"></i>
+              </div>
+
+              <div class="flex items-center gap-5 text-left">
+                <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-600 text-white flex items-center justify-center text-5xl shadow-xl shadow-amber-200 flex-shrink-0">
+                  <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="px-3 py-1 rounded-full bg-amber-500 text-white font-black text-xs uppercase tracking-wider shadow-sm">
+                      🥇 第一名搶答成功
+                    </span>
+                    <span id="winnerTimeBadge" class="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                      反應：0.35 秒
+                    </span>
+                  </div>
+                  <h3 id="winnerName" class="text-3xl sm:text-5xl font-black text-slate-800">
+                    林怡君 老師
+                  </h3>
+                  <p id="winnerSchool" class="text-base sm:text-lg font-bold text-indigo-600 mt-1">
+                    花蓮縣北濱國小
+                  </p>
+                </div>
+              </div>
+
+              <!-- 講師評分按鈕 -->
+              <div class="flex flex-col sm:flex-row items-center gap-3 z-10">
+                <button onclick="rewardBuzzerCurrentWinner(1)" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg shadow-emerald-200 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-circle-check"></i> 回答正確 +1分
+                </button>
+                <button onclick="rewardBuzzerCurrentWinner(2)" class="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-star"></i> 精彩回答 +2分
+                </button>
+              </div>
+            </div>
+
+            <!-- 後續 2~5 名候補佇列 -->
+            <div id="buzzerQueueSection" class="w-full">
+              <div class="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-3 text-left flex items-center gap-2">
+                <i class="fa-solid fa-users"></i> 候補手速榜（前 2 ~ 5 名）
+              </div>
+              <div id="buzzerQueueList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-left">
+                <!-- 動態注入候補卡片 -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 底部提示列 -->
+        <div class="w-full pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+          <span>💡 提示：所有完成報到的學員，手機畫面將自動同步變為搶答按鈕，不需手動整理。</span>
+          <div class="flex items-center gap-2">
+            <span class="text-indigo-600 font-bold">加分將同時同步至「個人榜」與「分組榜」</span>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1030,7 +1157,7 @@
 
     // ---------------- QR Code 與 GAS 設定 ----------------
     function loadSavedConfig() {
-      const defaultUrl = 'https://script.google.com/macros/s/AKfycbwy9do0o09MW3aLEjN-WOqBMuCdcHefo59MJnERpaT9VeY9kzlPqIc7yF7GoXhFhp59IA/exec';
+      const defaultUrl = 'https://script.google.com/macros/s/AKfycbzqYr7zzr7T_6jinD0ORXABjHZwT-Jvi1zzoVDnyXvtg73BLDYGO6RoOjtkxMBwzBzyYA/exec';
       const savedGas = localStorage.getItem('puti_gas_url') || defaultUrl;
       document.getElementById('configGasUrl').value = savedGas;
       updateQRCode(savedGas);
@@ -2438,6 +2565,251 @@
         renderLeaderboard();
         playSound('click');
       }
+    }
+
+    // ================================= 模組: 即時搶答系統 (Host Buzzer Engine) =================================
+    let buzzerRoundActive = false;
+    let buzzerCurrentRoundId = 0;
+    let buzzerPollTimer = null;
+    let buzzerCountdownTimer = null;
+    let currentBuzzerWinner = null;
+
+    function getGasBaseUrl() {
+      const defaultUrl = 'https://script.google.com/macros/s/AKfycbzqYr7zzr7T_6jinD0ORXABjHZwT-Jvi1zzoVDnyXvtg73BLDYGO6RoOjtkxMBwzBzyYA/exec';
+      return localStorage.getItem('puti_gas_url') || defaultUrl;
+    }
+
+    // 發起搶答：3, 2, 1 倒數
+    function startBuzzerFromHost() {
+      if (buzzerRoundActive) return;
+      playSound('click');
+
+      const idleBox = document.getElementById('hostBuzzerIdle');
+      const cdBox = document.getElementById('hostBuzzerCountdown');
+      const raceBox = document.getElementById('hostBuzzerRacing');
+      const resBox = document.getElementById('hostBuzzerResults');
+      const cdNum = document.getElementById('hostCountdownNumber');
+      const statusBadge = document.getElementById('buzzerStatusBadge');
+
+      idleBox.classList.add('hidden');
+      resBox.classList.add('hidden');
+      raceBox.classList.add('hidden');
+      cdBox.classList.remove('hidden');
+
+      let count = 3;
+      cdNum.innerText = count;
+      playSound('click');
+
+      statusBadge.innerText = '倒數中...';
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300 animate-pulse';
+
+      if (buzzerCountdownTimer) clearInterval(buzzerCountdownTimer);
+
+      buzzerCountdownTimer = setInterval(() => {
+        count--;
+        if (count > 0) {
+          cdNum.innerText = count;
+          playSound('click');
+        } else {
+          clearInterval(buzzerCountdownTimer);
+          triggerBuzzerOpen();
+        }
+      }, 900);
+    }
+
+    // 正式開放搶答
+    function triggerBuzzerOpen() {
+      buzzerRoundActive = true;
+      currentBuzzerWinner = null;
+
+      const cdBox = document.getElementById('hostBuzzerCountdown');
+      const raceBox = document.getElementById('hostBuzzerRacing');
+      const statusBadge = document.getElementById('buzzerStatusBadge');
+      const btnStart = document.getElementById('btnHostStartBuzz');
+
+      cdBox.classList.add('hidden');
+      raceBox.classList.remove('hidden');
+
+      statusBadge.innerText = '⚡ 搶答開放中！';
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-rose-500 text-white shadow-md animate-bounce';
+      btnStart.disabled = true;
+      btnStart.classList.add('opacity-50', 'cursor-not-allowed');
+
+      // 播放蜂鳴器開搶音效
+      playBuzzerAlarmSound();
+
+      // 向 GAS 發送 startBuzzer
+      const baseUrl = getGasBaseUrl().split('?')[0];
+      const startUrl = baseUrl + '?action=startBuzzer&t=' + Date.now();
+
+      fetch(startUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.roundId) {
+            buzzerCurrentRoundId = data.roundId;
+          }
+          // 啟動高頻輪詢 (每 600ms 檢查名單)
+          startBuzzerHostPolling();
+        })
+        .catch(err => {
+          console.error('startBuzzer error:', err);
+          startBuzzerHostPolling();
+        });
+    }
+
+    function playBuzzerAlarmSound() {
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.36);
+      } catch(e) {}
+    }
+
+    function startBuzzerHostPolling() {
+      if (buzzerPollTimer) clearInterval(buzzerPollTimer);
+      buzzerPollTimer = setInterval(pollBuzzerResults, 750);
+    }
+
+    function pollBuzzerResults() {
+      if (!buzzerRoundActive) return;
+
+      const baseUrl = getGasBaseUrl().split('?')[0];
+      const pollUrl = baseUrl + '?action=getBuzzerStatus&t=' + Date.now();
+
+      fetch(pollUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.list && data.list.length > 0) {
+            renderBuzzerResults(data.list);
+          }
+        })
+        .catch(() => {});
+    }
+
+    function renderBuzzerResults(list) {
+      if (!list || list.length === 0) return;
+
+      const raceBox = document.getElementById('hostBuzzerRacing');
+      const resBox = document.getElementById('hostBuzzerResults');
+      raceBox.classList.add('hidden');
+      resBox.classList.remove('hidden');
+
+      const statusBadge = document.getElementById('buzzerStatusBadge');
+      statusBadge.innerText = `已產生 ${list.length} 位搶答者`;
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white';
+
+      // 第一名
+      const winner = list[0];
+      currentBuzzerWinner = winner;
+
+      document.getElementById('winnerName').innerText = winner.name + ' 老師';
+      document.getElementById('winnerSchool').innerText = winner.school || '花蓮研習夥伴';
+      document.getElementById('winnerTimeBadge').innerText = `反應時間：${winner.timeDiff || '0.3'} 秒`;
+
+      // 若剛剛剛好是第一位進入，施放彩帶慶祝
+      if (!resBox.dataset.celebrated) {
+        resBox.dataset.celebrated = 'true';
+        confetti({ particleCount: 35, spread: 60 });
+        playSound('cheer');
+      }
+
+      // 渲染 2~5 名
+      const queueList = document.getElementById('buzzerQueueList');
+      const queueSection = document.getElementById('buzzerQueueSection');
+
+      if (list.length > 1) {
+        queueSection.classList.remove('hidden');
+        const runnerUps = list.slice(1, 5);
+        queueList.innerHTML = runnerUps.map((item, idx) => {
+          const rank = idx + 2;
+          const medal = rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `${rank}`;
+          return `
+            <div class="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-7 h-7 rounded-lg bg-slate-100 font-black text-xs flex items-center justify-center text-slate-700 shrink-0">${medal}</span>
+                <div class="truncate">
+                  <div class="text-xs font-black text-slate-800 truncate">${item.name} 老師</div>
+                  <div class="text-[10px] text-slate-400 truncate">${item.school}</div>
+                </div>
+              </div>
+              <span class="text-[10px] font-bold text-slate-500 shrink-0">${item.timeDiff}s</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        queueList.innerHTML = `<div class="col-span-full text-xs text-slate-400 py-3 text-center">暫無其他候補者</div>`;
+      }
+    }
+
+    // 講師重置 / 準備下一題
+    function resetBuzzerFromHost() {
+      buzzerRoundActive = false;
+      if (buzzerPollTimer) clearInterval(buzzerPollTimer);
+      if (buzzerCountdownTimer) clearInterval(buzzerCountdownTimer);
+
+      const idleBox = document.getElementById('hostBuzzerIdle');
+      const cdBox = document.getElementById('hostBuzzerCountdown');
+      const raceBox = document.getElementById('hostBuzzerRacing');
+      const resBox = document.getElementById('hostBuzzerResults');
+      const statusBadge = document.getElementById('buzzerStatusBadge');
+      const btnStart = document.getElementById('btnHostStartBuzz');
+
+      delete resBox.dataset.celebrated;
+      idleBox.classList.remove('hidden');
+      cdBox.classList.add('hidden');
+      raceBox.classList.add('hidden');
+      resBox.classList.add('hidden');
+
+      statusBadge.innerText = '等待發起';
+      statusBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200';
+      btnStart.disabled = false;
+      btnStart.classList.remove('opacity-50', 'cursor-not-allowed');
+
+      playSound('click');
+
+      // 向後端重置
+      const baseUrl = getGasBaseUrl().split('?')[0];
+      fetch(baseUrl + '?action=resetBuzzer&t=' + Date.now()).catch(() => {});
+    }
+
+    // 講師為第一名搶答者評分加分（個人榜與分組榜同步連動）
+    function rewardBuzzerCurrentWinner(delta = 1) {
+      if (!currentBuzzerWinner) return;
+      const winnerName = currentBuzzerWinner.name;
+
+      // 1. 先尋找是否在簽到名冊中
+      const member = checkinList.find(t => t.name === winnerName);
+      if (member) {
+        changeIndividualScore(member.id, delta);
+        // 若該成員有分組，同步給該小組加分
+        if (member.teamId) {
+          changeTeamScore(member.teamId, delta);
+        }
+      } else {
+        // 名冊若未同步，建立臨時成員並加分
+        const newId = checkinList.length + 1;
+        checkinList.push({
+          id: newId,
+          name: winnerName,
+          school: currentBuzzerWinner.school || '花蓮研習夥伴',
+          score: delta
+        });
+        renderLeaderboard();
+        confetti({ particleCount: 30, spread: 50 });
+        playSound('scoreUp');
+      }
+
+      alert(`🎉 已為【${winnerName} 老師】成功增加 ${delta} 分！小組與個人排行榜已即時同步更新！`);
     }
 
     // 全螢幕切換
