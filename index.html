@@ -385,12 +385,15 @@
               </div>
 
               <!-- 講師評分按鈕 -->
-              <div class="flex flex-col sm:flex-row items-center gap-3 z-10">
-                <button onclick="rewardBuzzerCurrentWinner(1)" class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg shadow-emerald-200 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-2">
+              <div class="flex flex-col sm:flex-row items-center gap-2.5 z-10">
+                <button onclick="rewardBuzzerCurrentWinner(1)" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-md shadow-emerald-200 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-1.5">
                   <i class="fa-solid fa-circle-check"></i> 回答正確 +1分
                 </button>
-                <button onclick="rewardBuzzerCurrentWinner(2)" class="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-2">
+                <button onclick="rewardBuzzerCurrentWinner(2)" class="w-full sm:w-auto px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md shadow-indigo-200 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-1.5">
                   <i class="fa-solid fa-star"></i> 精彩回答 +2分
+                </button>
+                <button onclick="passToNextBuzzerWinner()" class="w-full sm:w-auto px-4 py-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 border-2 border-amber-300 font-black text-sm hover:scale-105 active:scale-95 transition flex items-center justify-center gap-1.5" title="答錯不扣分，讓候補名單第 2 名接棒回答">
+                  <i class="fa-solid fa-forward-step text-amber-600"></i> 殘念 / 遞補下一位
                 </button>
               </div>
             </div>
@@ -2696,8 +2699,11 @@
         .catch(() => {});
     }
 
+    let activeBuzzerQueue = [];
+
     function renderBuzzerResults(list) {
       if (!list || list.length === 0) return;
+      activeBuzzerQueue = [...list];
 
       const raceBox = document.getElementById('hostBuzzerRacing');
       const resBox = document.getElementById('hostBuzzerResults');
@@ -2749,6 +2755,19 @@
       } else {
         queueList.innerHTML = `<div class="col-span-full text-xs text-slate-400 py-3 text-center">暫無其他候補者</div>`;
       }
+    }
+
+    // 當第一名答錯或未回答時：殘念不扣分，無縫將第二名遞補升為第一名
+    function passToNextBuzzerWinner() {
+      if (!activeBuzzerQueue || activeBuzzerQueue.length <= 1) {
+        playSound('click');
+        alert('候補名冊已無其他搶答老師！您可以點擊「重置 / 下一題」重新開放新題目搶答。');
+        return;
+      }
+
+      const passed = activeBuzzerQueue.shift();
+      playSound('scoreDown');
+      renderBuzzerResults(activeBuzzerQueue);
     }
 
     // 講師重置 / 準備下一題
