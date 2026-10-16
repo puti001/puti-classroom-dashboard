@@ -315,6 +315,9 @@
           </div>
 
           <div class="flex items-center gap-2">
+            <button onclick="zoomNoticeQr()" class="px-3.5 py-2.5 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-black flex items-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-qrcode text-amber-600"></i> 📱 放大學員進場 QR Code
+            </button>
             <!-- 開放搶答按鈕 -->
             <button onclick="startBuzzerFromHost()" id="btnHostStartBuzz" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-black text-sm shadow-md shadow-amber-200 hover:scale-105 active:scale-95 transition flex items-center gap-2">
               <i class="fa-solid fa-play"></i> <span>開放全場搶答</span>
@@ -441,9 +444,14 @@
             </span>
           </div>
 
-          <!-- 題號切換按鈕組 (Q1~Q5) -->
-          <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200" id="kahootQNavBtns">
-            <!-- 動態生成 Q1~Q5 鈕 -->
+          <div class="flex items-center gap-3">
+            <button onclick="zoomNoticeQr()" class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-black flex items-center gap-1.5 transition shadow-sm">
+              <i class="fa-solid fa-qrcode text-indigo-600"></i> 📱 放大學員進場 QR Code
+            </button>
+            <!-- 題號切換按鈕組 (Q1~Q5) -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200" id="kahootQNavBtns">
+              <!-- 動態生成 Q1~Q5 鈕 -->
+            </div>
           </div>
         </div>
 
@@ -1262,8 +1270,12 @@
 
     // ---------------- QR Code 與 GAS 設定 ----------------
     function loadSavedConfig() {
-      const defaultUrl = 'https://script.google.com/macros/s/AKfycbzqYr7zzr7T_6jinD0ORXABjHZwT-Jvi1zzoVDnyXvtg73BLDYGO6RoOjtkxMBwzBzyYA/exec';
-      const savedGas = localStorage.getItem('puti_gas_url') || defaultUrl;
+      const latestUrl = 'https://script.google.com/macros/s/AKfycbxx0VWwn_NJFhcyEM-JwvYXStBGApgfpV85u0FT6nBt8teHbB5xPbgPAmNAgb3ux_j7jA/exec';
+      let savedGas = localStorage.getItem('puti_gas_url');
+      if (!savedGas || savedGas.includes('AKfycbzqYr7zzr7T') || savedGas.includes('AKfycbwy9do') || savedGas.includes('AKfycbwEj')) {
+        savedGas = latestUrl;
+        localStorage.setItem('puti_gas_url', latestUrl);
+      }
       document.getElementById('configGasUrl').value = savedGas;
       updateQRCode(savedGas);
     }
@@ -2138,12 +2150,14 @@
       saveNoticesToStorage();
     }
 
-    function zoomNoticeQr() {
-      if (!currentActiveQrUrl) return;
+    function zoomNoticeQr(targetUrl = null) {
+      const urlToDisplay = targetUrl || currentActiveQrUrl || getGasBaseUrl();
+      if (!urlToDisplay) return;
+      currentActiveQrUrl = urlToDisplay;
       const zoomCanvas = document.getElementById('qrZoomCanvas');
       zoomCanvas.innerHTML = '';
       new QRCode(zoomCanvas, {
-        text: currentActiveQrUrl,
+        text: urlToDisplay,
         width: 280,
         height: 280,
         colorDark: "#1E1B4B",
@@ -2680,8 +2694,13 @@
     let currentBuzzerWinner = null;
 
     function getGasBaseUrl() {
-      const defaultUrl = 'https://script.google.com/macros/s/AKfycbzqYr7zzr7T_6jinD0ORXABjHZwT-Jvi1zzoVDnyXvtg73BLDYGO6RoOjtkxMBwzBzyYA/exec';
-      return localStorage.getItem('puti_gas_url') || defaultUrl;
+      const latestUrl = 'https://script.google.com/macros/s/AKfycbxx0VWwn_NJFhcyEM-JwvYXStBGApgfpV85u0FT6nBt8teHbB5xPbgPAmNAgb3ux_j7jA/exec';
+      let saved = localStorage.getItem('puti_gas_url');
+      if (!saved || saved.includes('AKfycbzqYr7zzr7T') || saved.includes('AKfycbwy9do') || saved.includes('AKfycbwEj')) {
+        saved = latestUrl;
+        localStorage.setItem('puti_gas_url', latestUrl);
+      }
+      return saved;
     }
 
     // 發起搶答：3, 2, 1 倒數
@@ -3039,6 +3058,7 @@
       if (!q) return;
 
       kahootState = 'idle';
+      kahootVotersCache = [];
       clearInterval(kahootCountdownTimer);
       clearInterval(kahootPollTimer);
 
@@ -3181,12 +3201,24 @@
       fetch(baseUrl + `?action=setKahootQuestion&qIndex=${currentKahootIndex}&status=closed&correctOption=${q.correct}&t=` + Date.now())
         .then(r => r.json())
         .then(data => {
-          const counts = (data && data.state && data.state.counts) ? data.state.counts : { A: 1, B: 15, C: 0, D: 1 };
-          if (data && data.state && data.state.voters) kahootVotersCache = data.state.voters;
+          let counts = (data && data.state && data.state.counts) ? data.state.counts : null;
+          if (data && data.state && data.state.voters) {
+            kahootVotersCache = data.state.voters;
+          }
+          if (!counts) {
+            counts = { A: 0, B: 0, C: 0, D: 0 };
+            kahootVotersCache.forEach(v => {
+              if (counts[v.option] !== undefined) counts[v.option]++;
+            });
+          }
           renderKahootOptions(q, true, counts);
         })
         .catch(() => {
-          renderKahootOptions(q, true, { A: 1, B: 18, C: 0, D: 1 });
+          const counts = { A: 0, B: 0, C: 0, D: 0 };
+          kahootVotersCache.forEach(v => {
+            if (counts[v.option] !== undefined) counts[v.option]++;
+          });
+          renderKahootOptions(q, true, counts);
         });
 
       playSound('cheer');
@@ -3204,14 +3236,18 @@
 
     function awardKahootCorrectVoters() {
       const q = KAHOOT_QUESTIONS[currentKahootIndex];
+
+      if (!kahootVotersCache || kahootVotersCache.length === 0) {
+        playSound('buzzerFail');
+        alert('⚠️ 本題目前尚無任何學員完成投票，無法加分！\n請先讓學員手機掃碼進入並選擇答案。');
+        return;
+      }
+
       const correctVoters = kahootVotersCache.filter(v => v.option === q.correct);
 
       if (correctVoters.length === 0) {
-        checkinList.forEach(t => t.score = (t.score || 0) + 1);
-        renderLeaderboard();
-        confetti({ particleCount: 50, spread: 70 });
-        playSound('scoreUp');
-        alert(`🎉 已為全場答對此題的老師全員個人榜 +1 分！小組積分同步躍升！`);
+        playSound('buzzerFail');
+        alert(`❌ 本題共有 ${kahootVotersCache.length} 人作答，但無人選擇正確答案【${q.correct}】，不予加分。`);
         return;
       }
 
@@ -3228,7 +3264,7 @@
       renderLeaderboard();
       confetti({ particleCount: 60, spread: 80 });
       playSound('cheer');
-      alert(`🎉 恭喜！共有 ${correctVoters.length} 位老師答對正解【${q.correct}】！全員 +1 分已即時同步至排行榜！`);
+      alert(`🎉 恭喜！共有 ${correctVoters.length} 位老師答對正解【${q.correct}】！每位答對者 +1 分已即時同步至排行榜！`);
     }
 
     // 全螢幕切換
